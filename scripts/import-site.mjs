@@ -59,29 +59,16 @@ function rewriteSrcset(value, filePath) {
     .join(", ");
 }
 
-function transformHtml(html, filePath, lang) {
-  let out = html
-    .replace(URL_ATTRS, (_, attr, value) => `${attr}="${rewriteUrl(value, filePath)}"`)
-    .replace(SRCSET_ATTRS, (_, attr, value) => `${attr}="${rewriteSrcset(value, filePath)}"`)
-    // The portal's additions (frosted header, toasts) load after the template's CSS.
-    .replace(
-      "</head>",
-      `  <link rel="stylesheet" href="${SITE_PREFIX}/portal.css">\n</head>`,
-    );
-
-  if (out.includes('id="demo-form"')) {
-    // The demo form posts to the portal's /contact handler: tell it the page
-    // language (for the redirect back), and load the script that shows the outcome.
-    out = out.replace(
-      /(<form\b[^>]*\bid="demo-form"[^>]*>)/,
-      `$1\n            <input type="hidden" name="lang" value="${lang}">`,
-    );
-    out = out.replace(
-      "</body>",
-      `  <script src="${SITE_PREFIX}/portal.js" defer></script>\n</body>`,
-    );
+function transformHtml(html, filePath) {
+  // The template's demo form sends its page language to /contact. A form without
+  // it comes from a templates checkout older than the toast/background-submit
+  // update, which the portal's /contact handler expects.
+  if (html.includes('id="demo-form"') && !html.includes('name="lang"')) {
+    console.warn(`Warning: the demo form in ${filePath} has no lang field; update the templates checkout.`);
   }
-  return out;
+  return html
+    .replace(URL_ATTRS, (_, attr, value) => `${attr}="${rewriteUrl(value, filePath)}"`)
+    .replace(SRCSET_ATTRS, (_, attr, value) => `${attr}="${rewriteSrcset(value, filePath)}"`);
 }
 
 async function* walk(dir) {
@@ -100,16 +87,12 @@ async function importPages() {
     const target = path.join(SITE_OUT, rel);
     await mkdir(path.dirname(target), { recursive: true });
     if (rel.endsWith(".html")) {
-      const lang = rel.startsWith("ar/") ? "ar" : "en";
       const html = await readFile(file, "utf8");
-      await writeFile(target, transformHtml(html, TEMPLATE_PREFIX + rel, lang));
+      await writeFile(target, transformHtml(html, TEMPLATE_PREFIX + rel));
       pages++;
     } else {
       await cp(file, target);
     }
-  }
-  for (const file of ["portal.js", "portal.css"]) {
-    await cp(path.join(ROOT, "scripts", "site", file), path.join(SITE_OUT, file));
   }
   return pages;
 }

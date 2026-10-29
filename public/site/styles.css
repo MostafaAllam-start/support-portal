@@ -58,6 +58,11 @@
   --surface: #FFFFFF;
   --surface-2: #EAE7E1;
   --header-bg: #FFFFFF;
+  --header-glass: rgba(255, 255, 255, .62);
+  --header-glass-line: rgba(21, 26, 34, .08);
+  --toast-bg: #FFFFFF;
+  --toast-ink: #0A0A0A;
+  --toast-line: #E5E5E5;
   --ink: #151A22;
   --ink-2: #333A46;
   --muted: #4A5565;
@@ -126,6 +131,11 @@
     --surface: #171C25;
     --surface-2: #1F2630;
     --header-bg: #10141B;
+    --header-glass: rgba(16, 20, 27, .6);
+    --header-glass-line: rgba(255, 255, 255, .08);
+    --toast-bg: #171717;
+    --toast-ink: #FAFAFA;
+    --toast-line: rgba(255, 255, 255, .1);
     --ink: #F2F3F5;
     --ink-2: #C9CFD8;
     --muted: #A6AEBB;
@@ -471,6 +481,24 @@ html:not(.js) .js-only { display: none !important; }
   z-index: 50;
   background: var(--header-bg);
   border-block-end: 1px solid var(--line);
+}
+/* Frosted where supported: the section scrolling beneath tints the bar. The mobile
+   menu panel keeps the solid --header-bg so its links stay legible. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .site-header {
+    background: var(--header-glass);
+    border-block-end-color: var(--header-glass-line);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header {
+    background: var(--header-bg);
+    border-block-end-color: var(--line);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .header__bar {
@@ -2091,6 +2119,48 @@ h3:lang(ar),
 }
 
 /* ==========================================================================
+   Toasts: the demo form's outcome (main.js), styled like the support portal's
+   notifications so the site and the portal read as one product. Pinned to the
+   bottom-right corner in both languages, like the portal's.
+   ========================================================================== */
+.toaster {
+  position: fixed;
+  z-index: 200;
+  inset-block-end: 24px;
+  right: 24px;
+  inline-size: 356px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toast {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--toast-line);
+  border-radius: .625rem;
+  background: var(--toast-bg);
+  color: var(--toast-ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  font: 400 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .4s, transform .4s;
+}
+.toast.is-shown { opacity: 1; transform: none; }
+.toast .icon {
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 2;
+  margin-inline: -3px 4px;
+}
+@media (max-width: 600px) {
+  .toaster { left: 16px; right: 16px; inset-block-end: 16px; inline-size: auto; }
+}
+
+/* ==========================================================================
    Reduced motion: every animation and transition off. The bookmark rests on row 1, the seal is still with
    no pulses or sweep, photos are fully opaque at scale 1, the trace is pre-drawn.
    ========================================================================== */
@@ -2135,6 +2205,7 @@ h3:lang(ar),
   .site-header,
   .skip-link,
   .nav-toggle,
+  .toaster,
   .scrim,
   .contact__wash,
   .ph--bleed,

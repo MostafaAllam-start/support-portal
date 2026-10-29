@@ -2,15 +2,21 @@ import { createSiteRequestSchema, siteRequestService } from "@/services";
 import { eventBus } from "@/events/eventBus";
 import { DomainEventType } from "@/events/eventTypes";
 
-// Receives the branding site's "Request a demo" form (a plain HTML POST from
-// public/site), stores it for system support, and sends the visitor back to the
-// form, where public/site/portal.js shows the outcome.
+type Outcome = "sent" | "invalid";
+
+// Receives the branding site's "Request a demo" form (public/site) and stores it
+// for system support. The site's main.js sends the form in the background and
+// asks for JSON, then shows the outcome as a toast; a plain form post (no
+// JavaScript) is redirected back to the form instead. This is the /contact
+// contract documented in the templates repo's README.
 export async function POST(request: Request) {
+  const wantsJson = (request.headers.get("accept") ?? "").includes("application/json");
+
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return back("en", "invalid");
+    return reply(wantsJson, "en", "invalid");
   }
 
   const locale = form.get("lang") === "ar" ? "ar" : "en";
@@ -22,7 +28,7 @@ export async function POST(request: Request) {
     message: form.get("message") ?? "",
     locale,
   });
-  if (!parsed.success) return back(locale, "invalid");
+  if (!parsed.success) return reply(wantsJson, locale, "invalid");
 
   const created = await siteRequestService.create(parsed.data);
   eventBus.emit(DomainEventType.SITE_REQUEST_SUBMITTED, {
@@ -30,12 +36,15 @@ export async function POST(request: Request) {
     name: created.name,
     organization: created.organization,
   });
-  return back(locale, "sent");
+  return reply(wantsJson, locale, "sent");
 }
 
-// 303 so the browser follows with a GET; the target is fixed, never taken from
-// the request.
-function back(locale: "en" | "ar", outcome: "sent" | "invalid"): Response {
+function reply(wantsJson: boolean, locale: "en" | "ar", outcome: Outcome): Response {
+  if (wantsJson) {
+    return Response.json({ ok: outcome === "sent" }, { status: outcome === "sent" ? 200 : 400 });
+  }
+  // 303 so the browser follows with a GET; the target is fixed, never taken from
+  // the request.
   const page = locale === "ar" ? "/site/ar" : "/site";
   return new Response(null, {
     status: 303,
