@@ -1,0 +1,73 @@
+/* Portal additions to the branding site (copied to public/site by
+   scripts/import-site.mjs and linked after the template's styles.css). */
+
+/* Frosted header: translucent with a blur, so the section scrolling beneath it
+   tints the bar. The mobile menu panel keeps the solid var(--header-bg). */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .site-header {
+    background: rgba(255, 255, 255, .62);
+    border-block-end-color: rgba(21, 26, 34, .08);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+  }
+  :root[data-theme="dark"] .site-header {
+    background: rgba(16, 20, 27, .6);
+    border-block-end-color: rgba(255, 255, 255, .08);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header,
+  :root[data-theme="dark"] .site-header {
+    background: var(--header-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Toasts (public/site/portal.js), matching the portal's sonner toasts: the
+   popover colours, border and radius from app/globals.css. */
+.portal-toaster {
+  position: fixed;
+  z-index: 2147483647;
+  bottom: 24px;
+  right: 24px;
+  width: 356px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.portal-toast {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: .625rem;
+  background: #fff;
+  color: #0a0a0a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  font: 400 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .4s, transform .4s;
+}
+.portal-toast[data-shown] { opacity: 1; transform: none; }
+.portal-toast svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-inline: -3px 4px;
+}
+:root[data-theme="dark"] .portal-toast {
+  border-color: rgba(255, 255, 255, .1);
+  background: #171717;
+  color: #fafafa;
+}
+@media (max-width: 600px) {
+  .portal-toaster { left: 16px; right: 16px; bottom: 16px; width: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-toast { transition: none; }
+}
