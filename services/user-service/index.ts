@@ -7,11 +7,11 @@ import {
   signToken,
   verifyToken,
 } from "@/lib/auth/jwt";
-import { loginSchema, registerSchema, updateUserSchema } from "./schemas";
+import { loginSchema, createUserSchema, updateUserSchema } from "./schemas";
 import { UserRole, effectiveRoleName } from "@/lib/auth/roles";
 import type {
   LoginInput,
-  RegisterInput,
+  CreateUserInput,
   UpdateUserInput,
   SafeUser,
   AuthUser,
@@ -68,6 +68,16 @@ export class UserService extends Service {
 
     await this.setAuthCookie(token);
     return { token, user: this.sanitize(user) };
+  }
+
+  // Whether `password` is the active user's current password. Used to confirm
+  // sensitive self-service changes (email, password).
+  async verifyPassword(id: number, password: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null, isDisabled: false },
+      select: { password: true },
+    });
+    return Boolean(user && (await bcrypt.compare(password, user.password)));
   }
 
   // Expires the auth cookie. Must be called from a Server Action or Route Handler.
@@ -139,6 +149,15 @@ export class UserService extends Service {
       select: { id: true },
     });
     return admins.map((user) => user.id);
+  }
+
+  // Active system-support user ids (for branding-site request notifications).
+  async activeSystemSupportIds(): Promise<number[]> {
+    const users = await this.prisma.user.findMany({
+      where: { deletedAt: null, isDisabled: false, isSystemSupport: true },
+      select: { id: true },
+    });
+    return users.map((user) => user.id);
   }
 
   // From the given ids, returns only those who are active engineers or consultants.
@@ -329,6 +348,7 @@ export class UserService extends Service {
 
       const roleName = effectiveRoleName({
         isAdmin: user.isAdmin,
+        isSystemSupport: user.isSystemSupport,
         managesProject: user.managedProjects.length > 0,
         membershipRoleNames: user.projectMemberships.map((m) => m.role.name),
       });
@@ -343,7 +363,8 @@ export class UserService extends Service {
       const hasProjectRole = user.projectMemberships.length > 0 || user.managedProjects.length > 0;
       return {
         ...safe,
-        canAccessDashboard: safe.canAccessDashboard || hasProjectRole,
+        canAccessDashboard:
+          safe.canAccessDashboard || safe.isSystemSupport || hasProjectRole,
         role: { name: roleName },
         companies: [...companies].map(([id, name]) => ({ id, name })),
       };
@@ -353,16 +374,15 @@ export class UserService extends Service {
   // Creates a new user with a hashed password. Newly created accounts are plain
   // customers by default; pass `isAdmin`/`canAccessDashboard` to elevate.
   //
-  // SECURITY: `isAdmin` and `canAccessDashboard` are privileged. Only pass them
-  // from an already authorized (e.g. admin-only) caller; never forward a
-  // client-supplied flag from a public registration endpoint, or users could
-  // grant themselves access. The service does not enforce this — authorization is
-  // the caller's responsibility. Other roles are granted per-project via
-  // userProjectService.
-  async register(
-    input: RegisterInput,
+  // SECURITY: account creation is admin-only. Gate this call behind an admin
+  // check in the caller — the service does not enforce who may create accounts
+  // or grant `isAdmin`/`canAccessDashboard`. Other roles are granted per-project
+  // via userProjectService.
+  async create(
+    input: CreateUserInput,
     opts: {
       isAdmin?: boolean;
+      isSystemSupport?: boolean;
       canAccessDashboard?: boolean;
       companyId?: number | null;
       website?: string | null;
@@ -372,7 +392,7 @@ export class UserService extends Service {
       hasContactInfoCard?: boolean;
     } = {},
   ): Promise<SafeUser> {
-    const data = registerSchema.parse(input);
+    const data = createUserSchema.parse(input);
     await this.assertUnique(data.username, data.email);
 
     const user = await this.prisma.user.create({
@@ -384,6 +404,7 @@ export class UserService extends Service {
         jobTitle: data.jobTitle,
         image: data.image,
         isAdmin: opts.isAdmin ?? false,
+        isSystemSupport: opts.isSystemSupport ?? false,
         canAccessDashboard: opts.canAccessDashboard ?? false,
         companyId: opts.companyId ?? null,
         website: opts.website ?? null,
@@ -446,6 +467,13 @@ export class UserService extends Service {
     return this.sanitize(user);
   }
 
+  // Permanently removes a just-created account. Only for rolling back a creation
+  // whose follow-up step failed (e.g. the credentials email could not be sent);
+  // an account with any activity must be soft-deleted instead.
+  async hardDelete(id: number): Promise<void> {
+    await this.prisma.user.delete({ where: { id } });
+  }
+
   // Returns which identity field ("username" or "email") already belongs to
   // another user, or null when both are free. Unlike assertUnique it doesn't
   // throw, so callers (e.g. forms) can map the clash to a field-level error.
@@ -502,13 +530,19 @@ export class UserService extends Service {
     const hasProjectRole = memberships.length > 0 || managedProjectIds.length > 0;
     return {
       ...safe,
-      canAccessDashboard: safe.canAccessDashboard || hasProjectRole,
-      userRole: safe.isAdmin ? UserRole.Admin : UserRole.User,
+      canAccessDashboard:
+        safe.canAccessDashboard || safe.isSystemSupport || hasProjectRole,
+      userRole: safe.isAdmin
+        ? UserRole.Admin
+        : safe.isSystemSupport
+          ? UserRole.SystemSupport
+          : UserRole.User,
       memberships,
       managedProjectIds,
       role: {
         name: effectiveRoleName({
           isAdmin: safe.isAdmin,
+          isSystemSupport: safe.isSystemSupport,
           managesProject: managedProjectIds.length > 0,
           membershipRoleNames: memberships.map((m) => m.roleName),
         }),

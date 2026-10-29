@@ -45,6 +45,7 @@ export type UserItem = {
   email: string;
   jobTitle: string | null;
   isAdmin: boolean;
+  isSystemSupport: boolean;
   canAccessDashboard: boolean;
   image: string | null;
   isDisabled: boolean;
@@ -174,6 +175,11 @@ function UserFormDialog({
               required
             />
             <FieldError message={state.fieldErrors?.email} />
+            {mode === "add" && (
+              <p className="text-xs text-muted-foreground">
+                {t("users.form.emailHint")}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -294,6 +300,25 @@ function UserFormDialog({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="user-isSystemSupport">
+              {t("users.form.systemSupport")}
+            </Label>
+            <label className="flex min-h-9 items-center gap-2 text-sm">
+              <input
+                id="user-isSystemSupport"
+                type="checkbox"
+                name="isSystemSupport"
+                value="true"
+                defaultChecked={user?.isSystemSupport}
+                className="size-4 rounded border-input"
+              />
+              <span className="text-muted-foreground">
+                {t("users.form.systemSupportHint")}
+              </span>
+            </label>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="user-isTeamMember">
@@ -353,7 +378,7 @@ function UserFormDialog({
             <FieldError message={state.fieldErrors?.image} />
           </div>
 
-          {/* Create uses a default password from the environment, so the field
+          {/* Create generates a password and emails it to the user, so the field
               only appears when editing (blank = keep the current password). */}
           {mode === "edit" && (
             <div className="space-y-2">

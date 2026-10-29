@@ -23,6 +23,8 @@ type SampleSpec = {
   // Whether this user can open the staff dashboard (staff = true; the plain
   // customer accounts default to false).
   canAccessDashboard?: boolean;
+  // Whether this user is system support (works the branding-site requests).
+  systemSupport?: boolean;
   // The company this user belongs to (matches a key in the companies map).
   company?: "ECM" | "CTC";
 };
@@ -86,6 +88,14 @@ const SAMPLES: SampleSpec[] = [
     company: "CTC",
   },
   {
+    name: "Sara Support",
+    username: "support1",
+    email: "support1@example.com",
+    jobTitle: "System Support",
+    systemSupport: true,
+    company: "ECM",
+  },
+  {
     name: "Uma User",
     username: "user1",
     email: "user1@example.com",
@@ -132,6 +142,7 @@ export async function seedSampleUsers(
         hasContactInfoCard: spec.contactCard ?? false,
         isTeamMember: spec.teamMember ?? false,
         canAccessDashboard: spec.canAccessDashboard ?? false,
+        isSystemSupport: spec.systemSupport ?? false,
         companyId,
       },
       create: {
@@ -146,6 +157,7 @@ export async function seedSampleUsers(
         hasContactInfoCard: spec.contactCard ?? false,
         isTeamMember: spec.teamMember ?? false,
         canAccessDashboard: spec.canAccessDashboard ?? false,
+        isSystemSupport: spec.systemSupport ?? false,
         companyId,
       },
     });

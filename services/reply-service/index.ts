@@ -14,6 +14,7 @@ const authorSelect = {
   image: true,
   jobTitle: true,
   isAdmin: true,
+  isSystemSupport: true,
   projectMemberships: { select: { role: { select: { name: true } } } },
   managedProjects: { select: { id: true } },
 } as const;
@@ -77,6 +78,7 @@ export class ReplyService extends Service {
         role: {
           name: effectiveRoleName({
             isAdmin: user.isAdmin,
+            isSystemSupport: user.isSystemSupport,
             managesProject: user.managedProjects.length > 0,
             membershipRoleNames: user.projectMemberships.map((m) => m.role.name),
           }),

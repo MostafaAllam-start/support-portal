@@ -6,7 +6,9 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const registerSchema = z.object({
+// Accounts are only created by an admin. The email is required: the new user's
+// sign-in credentials are delivered there.
+export const createUserSchema = z.object({
   name: z.string().min(1),
   username: z.string().min(3),
   email: z.email(),
@@ -14,18 +16,6 @@ export const registerSchema = z.object({
   jobTitle: z.string().optional(),
   image: z.string().optional(),
 });
-
-// Form-level schema for the sign-up UI: the registration fields plus a password
-// confirmation. Confirmation is purely a UI concern, so it lives here rather
-// than in the service-facing registerSchema.
-export const registerFormSchema = registerSchema
-  .extend({
-    confirmPassword: z.string().min(1),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
 
 export const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -38,11 +28,13 @@ export const updateUserSchema = z.object({
   website: z.string().nullable().optional(),
   whatsapp: z.string().nullable().optional(),
   linkedin: z.string().nullable().optional(),
-  // Global admin flag (the only global role; every other role is per-project).
+  // The global roles (every other role is per-project): admin, and system
+  // support, which works the branding-site requests.
   isAdmin: z.boolean().optional(),
+  isSystemSupport: z.boolean().optional(),
   // Whether the user may open the staff dashboard.
   canAccessDashboard: z.boolean().optional(),
-  // The company the user belongs to (ECM/CTC). Chosen at registration.
+  // The company the user belongs to (ECM/CTC).
   companyId: z.number().int().positive().nullable().optional(),
   // Whether the user is featured on their company's public landing-page team.
   isTeamMember: z.boolean().optional(),

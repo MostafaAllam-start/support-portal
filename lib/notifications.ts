@@ -15,6 +15,26 @@ export function notificationHref(
       return `/dashboard/suggestions/${entityId}`;
     case "complaint":
       return `/dashboard/complaints/${entityId}`;
+    case "site_request":
+      // The requests list opens the matching request's details.
+      return `/dashboard/requests?id=${entityId}`;
+    default:
+      return null;
+  }
+}
+
+// The customer-facing page for the same target, for recipients without dashboard
+// access (e.g. the reporter of a ticket). Complaints have no customer page.
+export function customerNotificationHref(
+  entityType: NotificationEntityType | null | undefined,
+  entityId: number | null | undefined,
+): string | null {
+  if (entityType == null || entityId == null) return null;
+  switch (entityType) {
+    case "ticket":
+      return `/tickets/${entityId}`;
+    case "suggestion":
+      return `/suggestions/${entityId}`;
     default:
       return null;
   }

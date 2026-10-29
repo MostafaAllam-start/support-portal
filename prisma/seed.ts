@@ -10,12 +10,14 @@ import { seedReplies } from "./seeding/replies";
 import { seedReports } from "./seeding/reports";
 import { seedFeedback } from "./seeding/feedback";
 import { seedPartners } from "./seeding/partners";
+import { seedSiteRequests } from "./seeding/site-requests";
 
 // Orchestrates the individual seeders in dependency order: roles and companies
 // first, then the users that reference them, then projects (with managers and
 // members), tickets, replies, diagnostic reports, and feedback
-// (suggestions/complaints) for the dashboard and user views, and finally the
-// public-facing team members and partners shown on the landing page.
+// (suggestions/complaints) for the dashboard and user views, the public-facing
+// team members and partners shown on the landing page, and finally the demo
+// requests from the branding site.
 async function main() {
   const roles = await seedRoles(prisma);
   const companies = await seedCompanies(prisma);
@@ -27,6 +29,7 @@ async function main() {
   await seedReports(prisma, sampleUsers);
   await seedFeedback(prisma, sampleUsers, companies, projects);
   await seedPartners(prisma, companies);
+  await seedSiteRequests(prisma);
 }
 
 main()

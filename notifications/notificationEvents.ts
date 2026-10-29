@@ -8,6 +8,7 @@ export const notificationEntityTypeValues = [
   "ticket",
   "suggestion",
   "complaint",
+  "site_request",
 ] as const;
 
 export const createNotificationSchema = z.object({

@@ -75,7 +75,7 @@ export function ProfileForm({ user }: { user: ProfileValues }) {
         </div>
       </div>
 
-      {/* Read-only identity fields. */}
+      {/* The username is the sign-in handle and can only be changed by an admin. */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="profile-username">{t("username")}</Label>
@@ -83,7 +83,16 @@ export function ProfileForm({ user }: { user: ProfileValues }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="profile-email">{t("email")}</Label>
-          <Input id="profile-email" value={user.email} disabled readOnly />
+          <Input
+            id="profile-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={user.email}
+            aria-invalid={Boolean(state.fieldErrors?.email)}
+            required
+          />
+          <FieldError message={state.fieldErrors?.email} />
         </div>
       </div>
 
@@ -118,18 +127,52 @@ export function ProfileForm({ user }: { user: ProfileValues }) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="profile-password">{t("password")}</Label>
-        <Input
-          id="profile-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          aria-invalid={Boolean(state.fieldErrors?.password)}
-        />
-        <p className="text-xs text-muted-foreground">{t("passwordHint")}</p>
-        <FieldError message={state.fieldErrors?.password} />
-      </div>
+      <section className="grid gap-4 border-t pt-5" aria-labelledby="profile-security">
+        <div className="space-y-1">
+          <h2 id="profile-security" className="text-sm font-medium">
+            {t("security")}
+          </h2>
+          <p className="text-xs text-muted-foreground">{t("securityHint")}</p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="profile-newPassword">{t("password")}</Label>
+            <Input
+              id="profile-newPassword"
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(state.fieldErrors?.newPassword)}
+            />
+            <p className="text-xs text-muted-foreground">{t("passwordHint")}</p>
+            <FieldError message={state.fieldErrors?.newPassword} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="profile-confirmPassword">{t("confirmPassword")}</Label>
+            <Input
+              id="profile-confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(state.fieldErrors?.confirmPassword)}
+            />
+            <FieldError message={state.fieldErrors?.confirmPassword} />
+          </div>
+        </div>
+
+        <div className="space-y-2 sm:max-w-[calc(50%-0.5rem)]">
+          <Label htmlFor="profile-currentPassword">{t("currentPassword")}</Label>
+          <Input
+            id="profile-currentPassword"
+            name="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={Boolean(state.fieldErrors?.currentPassword)}
+          />
+          <FieldError message={state.fieldErrors?.currentPassword} />
+        </div>
+      </section>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>

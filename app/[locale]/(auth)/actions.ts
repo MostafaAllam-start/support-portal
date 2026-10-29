@@ -3,7 +3,7 @@
 import type { z } from "zod";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
-import { userService, loginSchema, registerFormSchema } from "@/services";
+import { userService, loginSchema } from "@/services";
 import { canViewDashboard } from "@/lib/auth/guards";
 import {
   getSelectedCompanyIdFromCookie,
@@ -71,49 +71,5 @@ export async function loginAction(
       await setSelectedCompanyCookie(me.companyId);
     }
   }
-  return redirect({ href, locale: await getLocale() });
-}
-
-export async function registerAction(
-  _prevState: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
-  const parsed = registerFormSchema.safeParse({
-    name: formData.get("name"),
-    username: formData.get("username"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
-  if (!parsed.success) {
-    return { fieldErrors: fieldErrorsFrom(parsed.error) };
-  }
-
-  // Drop the UI-only confirmation before handing off to the service.
-  const { confirmPassword: _confirmPassword, ...data } = parsed.data;
-
-  // Company was chosen before registration (the page is gated). Persist that
-  // choice onto the new account.
-  const companyId = await getSelectedCompanyIdFromCookie();
-
-  try {
-    // Role defaults to "user" inside the service.
-    const created = await userService.register(data);
-    if (companyId != null) {
-      await userService.update(created.id, { companyId });
-    }
-    // Auto sign-in so the new user lands authenticated.
-    await userService.login({
-      identifier: data.username,
-      password: data.password,
-    });
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Unable to create account.",
-    };
-  }
-
-  // No company chosen yet (shouldn't happen — the page is gated) -> pick one.
-  const href = companyId != null ? "/" : "/company-select";
   return redirect({ href, locale: await getLocale() });
 }

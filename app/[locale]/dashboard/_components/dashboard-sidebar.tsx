@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Building2,
+  ClipboardList,
   Contact,
   FolderKanban,
   Handshake,
@@ -10,6 +11,7 @@ import {
   Lightbulb,
   LogOut,
   MessageSquareWarning,
+  Settings,
   Ticket,
   Users,
   type LucideIcon,
@@ -17,10 +19,11 @@ import {
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Logo } from "@/components/logo";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -54,8 +57,13 @@ const NAV: Record<string, NavItem[]> = {
       icon: MessageSquareWarning,
     },
     { href: "/dashboard/suggestions", key: "suggestions", icon: Lightbulb },
+    { href: "/dashboard/requests", key: "requests", icon: ClipboardList },
     { href: "/dashboard/team-members", key: "teamMembers", icon: Contact },
     { href: "/dashboard/partners", key: "partners", icon: Handshake },
+  ],
+  // System support works only the branding-site requests.
+  "system-support": [
+    { href: "/dashboard/requests", key: "requests", icon: ClipboardList },
   ],
   "software-engineer": [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
@@ -97,7 +105,7 @@ export function DashboardSidebar({
   side = "left",
 }: {
   role: string;
-  user: { name: string; username: string };
+  user: { name: string; username: string; image: string | null };
   side?: "left" | "right";
 }) {
   const t = useTranslations("Dashboard");
@@ -146,6 +154,13 @@ export function DashboardSidebar({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton size="lg">
                   <Avatar className="size-8 rounded-md">
+                    {user.image && (
+                      <AvatarImage
+                        src={user.image}
+                        alt={user.name}
+                        className="rounded-md object-cover"
+                      />
+                    )}
                     <AvatarFallback className="rounded-md text-xs">
                       {initials(user.name)}
                     </AvatarFallback>
@@ -165,6 +180,12 @@ export function DashboardSidebar({
               >
                 <DropdownMenuLabel>{t("account")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings">
+                    <Settings className="size-4" />
+                    {t("settings")}
+                  </Link>
+                </DropdownMenuItem>
                 <form action={logoutAction}>
                   <button
                     type="submit"

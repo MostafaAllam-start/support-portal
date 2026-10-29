@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { requireDashboardUser } from "@/lib/auth/guards";
+import { isSystemSupport, requireDashboardAccess } from "@/lib/auth/guards";
 import { notificationService } from "@/services";
 import { DashboardSidebar } from "./_components/dashboard-sidebar";
 import {
@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const user = await requireDashboardUser();
+  const user = await requireDashboardAccess();
 
   // The sidebar is pinned with physical left/right, which don't flip under
   // dir="rtl", so place it on the right for the RTL (Arabic) locale.
@@ -51,14 +51,16 @@ export default async function DashboardLayout({
 
   const notificationsHref = user.isAdmin
     ? "/dashboard/issues"
-    : "/dashboard/tickets";
+    : isSystemSupport(user)
+      ? "/dashboard/requests"
+      : "/dashboard/tickets";
 
   return (
     <SidebarProvider>
       <DashboardSidebar
         role={user.role.name}
         side={side}
-        user={{ name: user.name, username: user.username }}
+        user={{ name: user.name, username: user.username, image: user.image }}
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">

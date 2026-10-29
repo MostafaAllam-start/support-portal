@@ -3,7 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { companyService } from "@/services";
 import { brandCompanyId, requireCompanySelection } from "@/lib/auth/guards";
 import { brandKeyForCompany } from "@/lib/companies";
-import { AuthScreen } from "../_components/auth-screen";
+import { LoginScreen } from "../_components/login-screen";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -20,7 +20,5 @@ export default async function LoginPage({
   await requireCompanySelection();
   const companyId = await brandCompanyId();
   const company = companyId ? await companyService.findById(companyId) : null;
-  return (
-    <AuthScreen initialMode="login" brand={brandKeyForCompany(company?.name)} />
-  );
+  return <LoginScreen brand={brandKeyForCompany(company?.name)} />;
 }

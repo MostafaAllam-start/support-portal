@@ -53,7 +53,7 @@ export async function brandCompanyId(): Promise<number | null> {
 
 // Entry gate for the public surfaces (landing + auth): an anonymous visitor must
 // pick a company first. Signed-in users pass through (their company is handled by
-// requireUser / registration).
+// requireUser / login).
 export async function requireCompanySelection(): Promise<void> {
   const user = await userService.currentUser();
   if (user) return;
@@ -196,11 +196,22 @@ export async function canReplyToReport(
   return false;
 }
 
-// Gate for the dashboard: anonymous -> /login, plain "user" -> landing,
-// privileged -> returns the authenticated user. Call at the top of dashboard
-// server components. `redirect()` throws, so the trailing throw is unreachable —
-// it only satisfies the return type.
-export async function requireDashboardUser(): Promise<AuthUser> {
+// System support only works the branding-site requests; every other dashboard
+// surface sends them back to that page.
+export function isSystemSupport(user: AuthUser): boolean {
+  return user.role.name === UserRole.SystemSupport;
+}
+
+// Where a dashboard user lands when they open /dashboard.
+export function dashboardHomeHref(user: AuthUser): string {
+  return isSystemSupport(user) ? "/dashboard/requests" : "/dashboard/kpis";
+}
+
+// Gate for the dashboard shell itself (layout, notifications, own settings):
+// anonymous -> /login, plain "user" -> landing, anyone with dashboard access
+// (system support included) -> returns the authenticated user. `redirect()`
+// throws, so the trailing throw is unreachable — it only satisfies the return type.
+export async function requireDashboardAccess(): Promise<AuthUser> {
   const user = await userService.currentUser();
   if (user && hasDashboardAccess(user)) {
     return user;
@@ -208,6 +219,29 @@ export async function requireDashboardUser(): Promise<AuthUser> {
   const locale = await getLocale();
   redirect({ href: user ? "/" : "/login", locale });
   throw new Error("unreachable");
+}
+
+// Gate for the staff dashboard surfaces (KPIs, tickets, …). Like
+// requireDashboardAccess, but system support is sent to the requests page. Call
+// at the top of dashboard server components and actions.
+export async function requireDashboardUser(): Promise<AuthUser> {
+  const user = await requireDashboardAccess();
+  if (isSystemSupport(user)) {
+    redirect({ href: "/dashboard/requests", locale: await getLocale() });
+    throw new Error("unreachable");
+  }
+  return user;
+}
+
+// Gate for pages any signed-in user may open, whatever their role (their own
+// account settings): anonymous -> /login, otherwise returns the user.
+export async function requireSignedInUser(): Promise<AuthUser> {
+  const user = await userService.currentUser();
+  if (!user) {
+    redirect({ href: "/login", locale: await getLocale() });
+    throw new Error("unreachable");
+  }
+  return user;
 }
 
 // Gate for the authenticated "user" surface (e.g. /tickets): anonymous -> /login,
@@ -232,8 +266,9 @@ export async function requireUser(): Promise<AuthUser> {
 }
 
 // Page-level gate for routes restricted to specific roles (e.g. admin-only).
+// Anyone else is sent to their dashboard home.
 export async function requireRole(...roles: string[]): Promise<AuthUser> {
-  const user = await requireDashboardUser();
+  const user = await requireDashboardAccess();
   if (roles.includes(user.userRole) || roles.includes(user.role.name)) {
     return user;
   }

@@ -1,0 +1,17 @@
+{
+  "appName": "Support Portal",
+  "greeting": "Hello {name},",
+  "footer": "This is an automated message from the Support Portal. Please do not reply to this email.",
+  "accountCreated": {
+    "subject": "Your Support Portal account is ready",
+    "intro": "An administrator has created an account for you on the Support Portal. Use the details below to sign in.",
+    "changePassword": "For your security, change this password from your profile page after you sign in.",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign in"
+  },
+  "notification": {
+    "view": "View in the portal",
+    "footer": "You are receiving this email because of activity in the Support Portal. Please do not reply to this email."
+  }
+}

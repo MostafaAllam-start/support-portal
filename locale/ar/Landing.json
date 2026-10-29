@@ -7,12 +7,11 @@
   },
   "cta": {
     "signIn": "تسجيل الدخول",
-    "getStarted": "ابدأ الآن",
     "myTickets": "تذاكري",
     "signOut": "تسجيل الخروج"
   },
   "hero": {
-    "primary": "ابدأ الآن",
+    "primary": "تسجيل الدخول",
     "secondary": "تواصل معنا"
   },
   "team": {

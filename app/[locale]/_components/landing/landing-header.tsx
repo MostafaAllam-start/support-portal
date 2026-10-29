@@ -15,7 +15,7 @@ export async function LandingHeader({ brand }: { brand: BrandKey }) {
   const t = await getTranslations("Landing");
   // Signed-in "user" visitors (privileged roles are redirected to the dashboard
   // before reaching the landing page) get a link to their tickets instead of the
-  // sign-in / sign-up CTAs.
+  // sign-in CTA.
   const me = await userService.currentUser();
   const companies = await companyService.list();
   const currentCompanyId = await brandCompanyId();
@@ -61,19 +61,9 @@ export async function LandingHeader({ brand }: { brand: BrandKey }) {
               />
             </>
           ) : (
-            <>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="hidden sm:inline-flex"
-              >
-                <Link href="/login">{t("cta.signIn")}</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/register">{t("cta.getStarted")}</Link>
-              </Button>
-            </>
+            <Button asChild size="sm">
+              <Link href="/login">{t("cta.signIn")}</Link>
+            </Button>
           )}
         </div>
       </div>

@@ -10,6 +10,13 @@ type TicketNotificationMessages = {
   ticketReportReply: (ticketId: number) => { title: string; details: string };
   complaintSubmitted: (ticketId: number) => { title: string; details: string };
   suggestionCreated: (title: string) => { title: string; details: string };
+  siteRequestSubmitted: (name: string, organization: string) => { title: string; details: string };
+  accountRequested: (input: {
+    actor: string;
+    name: string;
+    email: string;
+    organization: string;
+  }) => { title: string; details: string };
 };
 
 export async function ticketNotificationMessages(): Promise<TicketNotificationMessages> {
@@ -51,6 +58,14 @@ export async function ticketNotificationMessages(): Promise<TicketNotificationMe
     suggestionCreated: (title) => ({
       title: t("suggestionCreated.title", { title }),
       details: t("suggestionCreated.details", { title }),
+    }),
+    siteRequestSubmitted: (name, organization) => ({
+      title: t("siteRequestSubmitted.title", { organization }),
+      details: t("siteRequestSubmitted.details", { name, organization }),
+    }),
+    accountRequested: (input) => ({
+      title: t("accountRequested.title", { organization: input.organization }),
+      details: t("accountRequested.details", input),
     }),
   };
 }

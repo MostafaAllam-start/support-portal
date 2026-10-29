@@ -29,12 +29,47 @@ Both compose files read configuration from `.env`. The most important keys:
 | `POSTGRES_USER` / `_PASSWORD` / `_DB` | `db` service         | Read by Postgres on first init — keep them in sync with `DATABASE_URL`.                  |
 | `JWT_SECRET`                          | Auth                 | Long random string used to sign auth JWTs.                                               |
 | `ADMIN_*`                             | Seed                 | Initial admin account created by [prisma/seed.ts](prisma/seed.ts). Change before seeding a real environment. |
-| `DEFAULT_USER_PASSWORD`               | Web                  | Initial password for users the admin creates from the dashboard.                        |
 | `SOCKET_PORT`                         | `realtime` service   | Port the Socket.IO server listens on (3001).                                            |
 | `NEXT_PUBLIC_APP_URL`                 | Web / realtime CORS  | Origin the browser loads the app from; also the CORS origin the realtime server allows. |
 | `NEXT_PUBLIC_SOCKET_URL`              | Browser              | Public URL of the realtime server (inlined into the client bundle).                     |
+| `SMTP_HOST` / `SMTP_PORT`             | Web (email)          | SMTP server for outgoing mail. Port defaults to `587`. **Required in production** — without it new users can't be created. |
+| `SMTP_SECURE`                         | Web (email)          | `true` for implicit TLS. Defaults to `true` on port 465, otherwise STARTTLS is used when the server offers it. |
+| `SMTP_USER` / `SMTP_PASSWORD`         | Web (email)          | SMTP credentials. Leave unset for servers that don't require auth.                      |
+| `MAIL_FROM`                           | Web (email)          | Sender address, e.g. `Support Portal <no-reply@example.com>`. Falls back to `SMTP_USER`. |
+| `APP_URL`                             | Web (email)          | Public origin used for links in emails, e.g. `https://support.example.com`. Read at runtime (falls back to `NEXT_PUBLIC_APP_URL`). |
+| `MAIL_NOTIFICATIONS`                  | Web (email)          | Set to `false` to stop mirroring in-app notifications by email. Account emails are always sent. |
 
 > Container-network values (`DATABASE_URL` over the compose network and `SOCKET_INTERNAL_URL`) are set directly in [docker-compose.yml](docker-compose.yml) for the `web` service, so the `.env` values stay host-facing.
+
+## Accounts and email
+
+There is no public sign-up. An admin creates every account from **Dashboard → Users**; the email address is required, and the app generates a random password and emails the username and password to the new user. If the email can't be sent the account is not created, so the admin can fix the address and retry.
+
+Every user can change their name, email, password and photo from their account settings: **Settings** in the dashboard sidebar menu (`/dashboard/settings`), or the avatar menu on the customer pages (`/profile`). Changing the email or password asks for the current password.
+
+In-app notifications (new tickets, replies, status changes, assignments, …) are also sent by email to each recipient when SMTP is configured.
+
+Without `SMTP_HOST`, development builds print outgoing emails (including generated passwords) to the server log instead of sending them; production refuses to create users until SMTP is configured. The dev compose override routes all mail to [Mailpit](https://mailpit.axllent.org) — open [http://localhost:8025](http://localhost:8025) to read it.
+
+## Branding site and demo requests
+
+The ECM+ marketing site (the **Portico** template from [ecmplus-website-templates](https://github.com/MostafaAllam-start/ecmplus-website-templates)) is served by the portal itself:
+
+| Route | What it is |
+| ----- | ---------- |
+| `/` | Redirects to the site. |
+| `/site`, `/site/ar` | The site's English and Arabic pages (`/site/documents`, `/site/ar/about`, …), static files in [public/site](public/site) with their images in [public/assets](public/assets). |
+| `/support/*` | The site's support links (`/support/login`, `/support/tickets`, …) redirect to the matching portal page in the visitor's language. |
+| `/contact` | Receives the site's **Request a demo** form and stores it as a request. |
+| `/en`, `/ar` | The portal, unchanged. |
+
+The site's pages are generated, not hand-edited. To pick up template changes, check out the templates repository next to this one and re-run the import, which rewrites the template's relative links for the portal and copies the pages and assets:
+
+```bash
+pnpm site:import ../ecmplus-website-templates
+```
+
+**System support** is a global role (a checkbox on the user form, like Administrator). A system-support user's dashboard shows only **Requests**: every demo request sent from the site, which they can filter by status, open for details, mark as contacted, close or reopen. When a request comes from a new client who needs a support account, **Notify admin** sends every admin an in-app notification over Socket.IO and an email (even with `MAIL_NOTIFICATIONS=false`) asking them to create the account. New requests notify the system-support users, or the admins if there are none. Admins see the Requests page too. The seed adds a sample system-support account, `support1`.
 
 ## Running in production
 
