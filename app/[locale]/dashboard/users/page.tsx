@@ -138,6 +138,7 @@ export default async function UsersPage({
                       email: user.email,
                       jobTitle: user.jobTitle,
                       isAdmin: user.isAdmin,
+                      isSystemSupport: user.isSystemSupport,
                       canAccessDashboard: user.canAccessDashboard,
                       image: user.image,
                       isDisabled: user.isDisabled,

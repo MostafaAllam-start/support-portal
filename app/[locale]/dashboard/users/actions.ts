@@ -2,9 +2,11 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { getTranslations } from "next-intl/server";
-import { userService } from "@/services";
+import { getLocale, getTranslations } from "next-intl/server";
+import { emailService, userService } from "@/services";
+import type { SafeUser } from "@/services";
 import { DEFAULT_ADMIN_USERNAME, requireRole } from "@/lib/auth/guards";
+import { generatePassword } from "@/lib/auth/password";
 import { saveUserImage } from "@/lib/uploads";
 
 // Scoped translator for the inline form validation messages.
@@ -13,21 +15,18 @@ function getErrorTranslations(): Promise<ErrorTranslator> {
   return getTranslations("Dashboard.users.form.errors");
 }
 
-// Initial password for admin-created accounts. The create form has no password
-// field; the value comes from the environment (falling back to a sane default).
-const DEFAULT_USER_PASSWORD = process.env.DEFAULT_USER_PASSWORD ?? "support@123";
-
 export type ActionState = {
   ok?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
 
-// Shared identity fields. `password` is required on create and optional on edit
-// (blank = keep current), so it's validated separately. `isAdmin` (the only
-// global role) is read off the form checkbox separately; all other roles are
-// granted per-project on the Projects page. Built per-request so the messages
-// are translated to the caller's locale.
+// Shared identity fields. `password` is generated on create (and emailed to the
+// user) and optional on edit (blank = keep current), so it's handled separately.
+// The email is required: it's where the sign-in credentials are delivered.
+// The global roles (`isAdmin`, `isSystemSupport`) are read off the form
+// checkboxes separately; all other roles are granted per-project on the Projects
+// page. Built per-request so the messages are translated to the caller's locale.
 function identitySchema(t: ErrorTranslator) {
   return z.object({
     name: z.string().trim().min(1, t("nameRequired")),
@@ -36,7 +35,11 @@ function identitySchema(t: ErrorTranslator) {
       .trim()
       .min(3, t("usernameMin"))
       .regex(/^[a-zA-Z0-9._-]+$/, t("usernameFormat")),
-    email: z.email(t("emailInvalid")),
+    email: z
+      .string()
+      .trim()
+      .min(1, t("emailRequired"))
+      .pipe(z.email(t("emailInvalid"))),
   });
 }
 
@@ -99,6 +102,12 @@ export async function createUserAction(
   await requireRole("admin");
 
   const t = await getErrorTranslations();
+  // The generated password is only ever delivered by email, so refuse up front
+  // rather than create an account nobody can sign in to.
+  if (!emailService.canSend()) {
+    return { error: t("emailNotConfigured") };
+  }
+
   const parsed = identitySchema(t).safeParse({
     name: formData.get("name"),
     username: formData.get("username"),
@@ -129,20 +138,25 @@ export async function createUserAction(
   }
 
   const isAdmin = formData.get("isAdmin") === "true";
+  const isSystemSupport = formData.get("isSystemSupport") === "true";
   // Admins always have dashboard access, so an admin implies the flag.
   const canAccessDashboard =
     isAdmin || formData.get("canAccessDashboard") === "true";
+  // Each account gets its own random password, emailed to the user below.
+  const password = generatePassword();
+
+  let created: SafeUser;
   try {
-    await userService.register(
+    created = await userService.create(
       {
         ...parsed.data,
-        // Admin-created accounts get a shared default password (no form field).
-        password: DEFAULT_USER_PASSWORD,
+        password,
         jobTitle: readOptional(formData, "jobTitle"),
         image: image ?? undefined,
       },
       {
         isAdmin,
+        isSystemSupport,
         canAccessDashboard,
         companyId: readCompanyId(formData),
         website: readOptional(formData, "website") ?? null,
@@ -154,6 +168,22 @@ export async function createUserAction(
     );
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Failed to save" };
+  }
+
+  try {
+    await emailService.sendAccountCredentials({
+      to: created.email,
+      name: created.name,
+      username: created.username,
+      password,
+      locale: await getLocale(),
+    });
+  } catch (error) {
+    // Without the email the account is unusable, so undo it and let the admin
+    // retry (e.g. after fixing the address).
+    console.error("[createUserAction] Failed to email the new user's credentials:", error);
+    await userService.hardDelete(created.id);
+    return { error: t("credentialsEmailFailed") };
   }
 
   revalidate();
@@ -216,6 +246,7 @@ export async function updateUserAction(
   // submits otherwise.
   const isDefaultAdmin = existing.username === DEFAULT_ADMIN_USERNAME;
   const isAdmin = isDefaultAdmin ? true : formData.get("isAdmin") === "true";
+  const isSystemSupport = formData.get("isSystemSupport") === "true";
   // Admins always have dashboard access, so an admin implies the flag.
   const canAccessDashboard =
     isAdmin || formData.get("canAccessDashboard") === "true";
@@ -224,6 +255,7 @@ export async function updateUserAction(
     await userService.update(id, {
       ...parsed.data,
       isAdmin,
+      isSystemSupport,
       canAccessDashboard,
       password,
       image,

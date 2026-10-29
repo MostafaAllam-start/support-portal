@@ -17,17 +17,29 @@ export {
   UserProjectService,
   userProjectService,
 } from "./user-project-service";
+export { EmailService, emailService } from "./email-service";
+export { SiteRequestService, siteRequestService } from "./site-request-service";
+export {
+  createSiteRequestSchema,
+  siteRequestModuleValues,
+  siteRequestStatusValues,
+} from "./site-request-service";
+export type {
+  CreateSiteRequestInput,
+  ManualSiteRequestStatus,
+  SiteRequest,
+  SiteRequestStatus,
+} from "./site-request-service";
 
 export {
   loginSchema,
-  registerSchema,
-  registerFormSchema,
+  createUserSchema,
   updateUserSchema,
 } from "./user-service";
 
 export type {
   LoginInput,
-  RegisterInput,
+  CreateUserInput,
   UpdateUserInput,
   SafeUser,
   AuthUser,

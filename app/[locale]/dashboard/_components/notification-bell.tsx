@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useSocketNotification } from "@/hooks/useSocketNotification";
 import {
   Bell,
+  ClipboardList,
   Lightbulb,
   MessageSquareWarning,
   Ticket,
@@ -47,6 +48,7 @@ const NOTIFICATION_ICONS: Record<
   ticket: { Icon: Ticket, className: "text-blue-500" },
   suggestion: { Icon: Lightbulb, className: "text-amber-500" },
   complaint: { Icon: MessageSquareWarning, className: "text-destructive" },
+  site_request: { Icon: ClipboardList, className: "text-emerald-600" },
 };
 
 function NotificationIcon({

@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireDashboardUser } from "@/lib/auth/guards";
+import { requireDashboardAccess } from "@/lib/auth/guards";
 import { notificationService } from "@/services";
 
 export async function markNotificationReadAction(
   notificationId: number,
 ): Promise<{ ok: boolean }> {
-  const user = await requireDashboardUser();
+  const user = await requireDashboardAccess();
   if (!Number.isInteger(notificationId) || notificationId <= 0) {
     return { ok: false };
   }

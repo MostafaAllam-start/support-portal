@@ -9,6 +9,8 @@ import type {
   SuggestionCreatedPayload,
   TicketReportSubmittedPayload,
   TicketReportReplyAddedPayload,
+  SiteRequestSubmittedPayload,
+  SiteRequestAdminNotifiedPayload,
 } from "../eventTypes";
 import { notificationService } from "@/notifications/notificationService";
 import { ticketNotificationMessages } from "@/lib/notification-messages";
@@ -209,6 +211,55 @@ export function registerNotificationListeners(): void {
       entityType: "ticket",
       entityId: data.ticketId,
     });
+  });
+
+  // ── SITE_REQUEST_SUBMITTED ──────────────────────────────────────────────────
+  // System support works the requests; with nobody in that role yet, the admins
+  // get them so a request never goes unseen.
+  eventBus.on(DomainEventType.SITE_REQUEST_SUBMITTED, async (data: SiteRequestSubmittedPayload) => {
+    const messages = await ticketNotificationMessages();
+    const msg = messages.siteRequestSubmitted(data.name, data.organization);
+    const { userService } = await import("@/services");
+    let recipients = await userService.activeSystemSupportIds();
+    if (recipients.length === 0) recipients = await userService.activeAdminIds();
+    if (recipients.length === 0) return;
+
+    await notificationService.notifyMany(recipients, {
+      type: "site_request_submitted",
+      title: msg.title,
+      details: msg.details,
+      entityType: "site_request",
+      entityId: data.requestId,
+    });
+  });
+
+  // ── SITE_REQUEST_ADMIN_NOTIFIED ─────────────────────────────────────────────
+  // System support asks the admins to create a support account for a new client:
+  // in-app + real time like every notification, and always by email.
+  eventBus.on(DomainEventType.SITE_REQUEST_ADMIN_NOTIFIED, async (data: SiteRequestAdminNotifiedPayload) => {
+    const messages = await ticketNotificationMessages();
+    const { userService } = await import("@/services");
+    const actor = await userService.findWithRole(data.actorId);
+    const msg = messages.accountRequested({
+      actor: actor?.name ?? "System support",
+      name: data.name,
+      email: data.email,
+      organization: data.organization,
+    });
+    const recipients = excludeActor(await userService.activeAdminIds(), data.actorId);
+    if (recipients.length === 0) return;
+
+    await notificationService.notifyMany(
+      recipients,
+      {
+        type: "site_request_account_requested",
+        title: msg.title,
+        details: msg.details,
+        entityType: "site_request",
+        entityId: data.requestId,
+      },
+      { forceEmail: true },
+    );
   });
 
   console.log("[NotificationListener] All domain event listeners registered.");

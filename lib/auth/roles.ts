@@ -1,10 +1,13 @@
-// Roles are granted per project (see the UserProject join). Admin is the one
-// global role and lives as the `isAdmin` flag on User. These helpers collapse a
-// user's project memberships (+ admin flag + the projects they manage) into the
-// single "effective role" name the dashboard surfaces still reason about.
+// Roles are granted per project (see the UserProject join). The two global roles
+// live as flags on User: admin (`isAdmin`) and system support (`isSystemSupport`).
+// These helpers collapse a user's project memberships (+ global flags + the
+// projects they manage) into the single "effective role" name the dashboard
+// surfaces still reason about.
 
 export enum UserRole {
   Admin = "admin",
+  // Works the branding-site requests; sees only that part of the dashboard.
+  SystemSupport = "system-support",
   User = "user",
 }
 
@@ -26,6 +29,7 @@ export enum ProjectRole {
 // Inputs needed to derive a user's effective role, gathered from the new model.
 export type RoleDerivation = {
   isAdmin: boolean;
+  isSystemSupport: boolean;
   // True when the user manages at least one project (Project.managerId).
   managesProject: boolean;
   // The role names from the user's project memberships (UserProject).
@@ -33,12 +37,15 @@ export type RoleDerivation = {
 };
 
 // Collapses the inputs to one role name, most-privileged first:
-// admin > manager > reviewer > sap-consultant > software-engineer > user.
-// "user" (a plain customer) is the fallback when nothing privileged applies.
+// admin > system-support > manager > reviewer > sap-consultant >
+// software-engineer > user. System support outranks the project roles because it
+// restricts the dashboard to the requests page. "user" (a plain customer) is the
+// fallback when nothing privileged applies.
 export function effectiveRoleName(
   input: RoleDerivation,
 ): ProjectRole | UserRole {
   if (input.isAdmin) return UserRole.Admin;
+  if (input.isSystemSupport) return UserRole.SystemSupport;
   if (input.managesProject || input.membershipRoleNames.includes("manager")) {
     return ProjectRole.Manager;
   }

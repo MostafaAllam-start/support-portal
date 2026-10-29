@@ -1,11 +1,11 @@
 {
   "menu": {
     "account": "Account",
-    "profile": "Profile",
+    "profile": "Settings",
     "signOut": "Sign out"
   },
-  "title": "Your profile",
-  "subtitle": "Manage your account details and how others can reach you.",
+  "title": "Account settings",
+  "subtitle": "Update your name, email, password and photo, and how others can reach you.",
   "name": "Name",
   "username": "Username",
   "email": "Email",
@@ -21,5 +21,19 @@
   "passwordHint": "Leave blank to keep your current password.",
   "save": "Save changes",
   "saving": "Saving…",
-  "success": "Your profile has been updated."
+  "success": "Your settings have been saved.",
+  "confirmPassword": "Confirm new password",
+  "currentPassword": "Current password",
+  "security": "Email and password",
+  "securityHint": "To change your email or password, enter your current password.",
+  "errors": {
+    "nameRequired": "Name is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email address",
+    "emailTaken": "This email is already used by another account",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordMismatch": "The passwords do not match",
+    "currentPasswordRequired": "Enter your current password to change your email or password",
+    "currentPasswordWrong": "Your current password is incorrect"
+  }
 }

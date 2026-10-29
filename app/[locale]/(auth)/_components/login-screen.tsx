@@ -1,20 +1,18 @@
 "use client";
 
 import { useActionState, useState, type ComponentProps } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   AtSign,
   Eye,
   EyeOff,
   Loader2,
   Lock,
-  Mail,
   ShieldCheck,
   Sparkles,
-  User,
   Zap,
 } from "lucide-react";
-import { cn, keepInputOnError } from "@/lib/utils";
+import { keepInputOnError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,32 +20,13 @@ import { Logo } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { BrandKey } from "@/lib/companies";
-import { loginAction, registerAction } from "../actions";
+import { loginAction } from "../actions";
 
-type AuthMode = "login" | "register";
-
-export function AuthScreen({
-  initialMode = "login",
-  brand = "ctc",
-}: {
-  initialMode?: AuthMode;
-  brand?: BrandKey;
-}) {
-  const [mode, setMode] = useState<AuthMode>(initialMode);
-  const isLogin = mode === "login";
-  const locale = useLocale();
+// Sign-in is the only public auth surface: accounts are created by an admin from
+// the dashboard, and the credentials are emailed to the new user.
+export function LoginScreen({ brand = "ctc" }: { brand?: BrandKey }) {
   const t = useTranslations("Auth");
   const tBrand = useTranslations("Brand");
-
-  function switchMode(next: AuthMode) {
-    if (next === mode) return;
-    setMode(next);
-    // Keep the URL in sync (locale-prefixed) without a full client navigation,
-    // so typed input and the toggle animation are preserved.
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `/${locale}/${next}`);
-    }
-  }
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -108,69 +87,19 @@ export function AuthScreen({
             </div>
           </div>
 
-          {/* Segmented toggle */}
-          <div className="relative mb-8 grid grid-cols-2 rounded-lg bg-muted p-1 text-sm font-medium">
-            <span
-              className={cn(
-                "pointer-events-none absolute top-1 bottom-1 start-1 w-[calc(50%-0.25rem)] rounded-md bg-background shadow-sm transition-transform duration-300 ease-out",
-                isLogin
-                  ? "translate-x-0"
-                  : "translate-x-full rtl:-translate-x-full",
-              )}
-            />
-            <button
-              type="button"
-              onClick={() => switchMode("login")}
-              className={cn(
-                "relative z-10 rounded-md py-2 transition-colors",
-                isLogin
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t("signIn")}
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode("register")}
-              className={cn(
-                "relative z-10 rounded-md py-2 transition-colors",
-                !isLogin
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t("signUp")}
-            </button>
-          </div>
-
-          {/* Heading */}
           <div className="mb-6 space-y-1.5">
             <h2 className="text-2xl font-semibold tracking-tight">
-              {isLogin ? t("welcomeBack") : t("createAccount")}
+              {t("welcomeBack")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {isLogin ? t("welcomeBackDesc") : t("createAccountDesc")}
+              {t("welcomeBackDesc")}
             </p>
           </div>
 
-          {/* Animated form swap (key remounts → re-triggers the enter animation) */}
-          <div
-            key={mode}
-            className="animate-in fade-in-50 slide-in-from-bottom-2 duration-300"
-          >
-            {isLogin ? <LoginForm /> : <RegisterForm />}
-          </div>
+          <LoginForm />
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {isLogin ? `${t("noAccount")} ` : `${t("haveAccount")} `}
-            <button
-              type="button"
-              onClick={() => switchMode(isLogin ? "register" : "login")}
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              {isLogin ? t("signUp") : t("signIn")}
-            </button>
+            {t("noAccount")}
           </p>
         </div>
       </main>
@@ -225,95 +154,6 @@ function LoginForm() {
       <Button type="submit" className="w-full" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />}
         {t("submitSignIn")}
-      </Button>
-    </form>
-  );
-}
-
-function RegisterForm() {
-  const t = useTranslations("Auth");
-  const [state, formAction, pending] = useActionState(registerAction, {});
-
-  return (
-    <form action={formAction} onReset={keepInputOnError(state)} className="space-y-4">
-      <FormError message={state.error} />
-
-      <div className="space-y-2">
-        <Label htmlFor="reg-name">{t("fullName")}</Label>
-        <div className="relative">
-          <User className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="reg-name"
-            name="name"
-            placeholder={t("namePlaceholder")}
-            autoComplete="name"
-            className="ps-9"
-            aria-invalid={Boolean(state.fieldErrors?.name)}
-          />
-        </div>
-        <FieldError message={state.fieldErrors?.name} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reg-username">{t("username")}</Label>
-        <div className="relative">
-          <AtSign className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="reg-username"
-            name="username"
-            placeholder={t("usernamePlaceholder")}
-            autoComplete="username"
-            className="ps-9"
-            aria-invalid={Boolean(state.fieldErrors?.username)}
-          />
-        </div>
-        <FieldError message={state.fieldErrors?.username} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reg-email">{t("email")}</Label>
-        <div className="relative">
-          <Mail className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="reg-email"
-            name="email"
-            type="email"
-            placeholder={t("emailPlaceholder")}
-            autoComplete="email"
-            className="ps-9"
-            aria-invalid={Boolean(state.fieldErrors?.email)}
-          />
-        </div>
-        <FieldError message={state.fieldErrors?.email} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reg-password">{t("password")}</Label>
-        <PasswordInput
-          id="reg-password"
-          name="password"
-          placeholder={t("passwordHint")}
-          autoComplete="new-password"
-          aria-invalid={Boolean(state.fieldErrors?.password)}
-        />
-        <FieldError message={state.fieldErrors?.password} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="reg-confirm-password">{t("confirmPassword")}</Label>
-        <PasswordInput
-          id="reg-confirm-password"
-          name="confirmPassword"
-          placeholder={t("confirmPasswordPlaceholder")}
-          autoComplete="new-password"
-          aria-invalid={Boolean(state.fieldErrors?.confirmPassword)}
-        />
-        <FieldError message={state.fieldErrors?.confirmPassword} />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />}
-        {t("submitCreate")}
       </Button>
     </form>
   );

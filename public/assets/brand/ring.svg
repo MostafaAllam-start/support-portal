@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 116">
+  <!-- ECM+ swoosh ring, web rendition of ecmplus-logo.png. The wordmark is HTML text
+       laid over it (see README "Logo lockup"); swap for the official vector when available. -->
+  <defs>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f2c230"/>
+      <stop offset=".38" stop-color="#d9a21b"/>
+      <stop offset=".78" stop-color="#3a3b3f"/>
+      <stop offset="1" stop-color="#c3c6cc"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d9096"/>
+      <stop offset=".32" stop-color="#2e2f33"/>
+      <stop offset=".68" stop-color="#b98612"/>
+      <stop offset="1" stop-color="#f2c230"/>
+    </linearGradient>
+    <mask id="ring" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="116">
+      <rect width="200" height="116" fill="#000"/>
+      <ellipse cx="100" cy="58" rx="98" ry="55" fill="#fff" transform="rotate(-5 100 58)"/>
+      <ellipse cx="100" cy="58" rx="88" ry="44" fill="#000" transform="rotate(4 100 58)"/>
+      <polygon points="0,83 200,18.2 200,21.8 0,86.6" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#ring)">
+    <polygon points="0,0 200,0 200,20 0,84.8" fill="url(#t)"/>
+    <polygon points="0,84.8 200,20 200,116 0,116" fill="url(#b)"/>
+  </g>
+</svg>

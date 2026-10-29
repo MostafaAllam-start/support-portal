@@ -1,7 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { requireUser } from "@/lib/auth/guards";
+import { redirect } from "@/i18n/navigation";
+import { hasDashboardAccess, requireSignedInUser } from "@/lib/auth/guards";
 import { TicketsHeader } from "../tickets/_components/tickets-header";
 import { ProfileForm } from "./_components/profile-form";
+import { toProfileValues } from "./profile-values";
 
 export default async function ProfilePage({
   params,
@@ -10,7 +12,11 @@ export default async function ProfilePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const user = await requireUser();
+  const user = await requireSignedInUser();
+  // Staff (system support included) manage their account inside the dashboard.
+  if (hasDashboardAccess(user)) {
+    redirect({ href: "/dashboard/settings", locale });
+  }
   const t = await getTranslations("Profile");
 
   return (
@@ -21,18 +27,7 @@ export default async function ProfilePage({
           <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <ProfileForm
-          user={{
-            name: user.name,
-            username: user.username,
-            email: user.email,
-            jobTitle: user.jobTitle,
-            image: user.image,
-            website: user.website,
-            whatsapp: user.whatsapp,
-            linkedin: user.linkedin,
-          }}
-        />
+        <ProfileForm user={toProfileValues(user)} />
       </main>
     </div>
   );

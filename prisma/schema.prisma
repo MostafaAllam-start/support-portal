@@ -39,6 +39,16 @@ enum NotificationEntityType {
   ticket
   suggestion
   complaint
+  site_request
+}
+
+// Where system support is with a branding-site request.
+enum SiteRequestStatus {
+  new
+  contacted
+  // System support asked the admins to create a support account for the client.
+  admin_notified
+  closed
 }
 
 model Role {
@@ -65,6 +75,9 @@ model User {
   // everyone else it is an explicit, admin-granted toggle (independent of any
   // project membership).
   canAccessDashboard Boolean   @default(false) @map("can_access_dashboard")
+  // Global system-support flag: the user works the branding-site requests and
+  // sees only that part of the dashboard (no tickets or project roles).
+  isSystemSupport    Boolean   @default(false) @map("is_system_support")
   jobTitle           String?   @map("job_title")
   website            String?
   whatsapp           String?
@@ -78,8 +91,8 @@ model User {
   isDisabled         Boolean   @default(false) @map("is_disabled")
   deletedAt          DateTime? @map("deleted_at")
 
-  // The company this user picked at registration (ECM or CTC). Nullable until a
-  // newly registered "user" makes the choice on /company-select.
+  // The company this user belongs to (ECM or CTC), set by the admin who created
+  // the account. Nullable until a plain "user" makes the choice on /company-select.
   companyId Int?     @map("company_id")
   company   Company? @relation(fields: [companyId], references: [id])
 
@@ -110,8 +123,37 @@ model User {
   // Replies (ticket/complaint/suggestion conversation messages) this user wrote.
   replies Reply[]
 
+  // Branding-site requests this user (system support) escalated to the admins.
+  notifiedSiteRequests SiteRequest[] @relation("NotifiedSiteRequests")
+
   @@index([companyId])
   @@map("users")
+}
+
+// A "Request a demo" submission from the public branding site (/site), worked by
+// system support from the dashboard.
+model SiteRequest {
+  id           Int               @id @default(autoincrement())
+  name         String
+  email        String
+  organization String
+  // Modules of interest picked on the form (documents, correspondence, …).
+  modules      String[]
+  message      String?
+  // Language of the page the request was sent from (en / ar).
+  locale       String            @default("en")
+  status       SiteRequestStatus @default(new)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  // When system support last asked the admins to create a support account for
+  // this client, and who did. Kept if the escalating user is deleted.
+  adminNotifiedAt   DateTime? @map("admin_notified_at")
+  adminNotifiedById Int?      @map("admin_notified_by_id")
+  adminNotifiedBy   User?     @relation("NotifiedSiteRequests", fields: [adminNotifiedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("site_requests")
 }
 
 model Ticket {

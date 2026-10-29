@@ -7,12 +7,11 @@
   },
   "cta": {
     "signIn": "Sign in",
-    "getStarted": "Get started",
     "myTickets": "My Tickets",
     "signOut": "Sign out"
   },
   "hero": {
-    "primary": "Get started",
+    "primary": "Sign in",
     "secondary": "Contact us"
   },
   "team": {

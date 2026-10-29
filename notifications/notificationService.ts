@@ -1,5 +1,6 @@
 import { notificationRepository } from "./notificationRepository";
 import { Notification, NotificationEntityType } from "@/app/generated/prisma/client";
+import { emailService } from "@/services/email-service";
 
 // In Docker container environment, the Socket.IO server will be accessible at http://realtime:3001
 const SOCKET_SERVER_URL = process.env.SOCKET_INTERNAL_URL || "http://localhost:3001";
@@ -15,6 +16,7 @@ export class NotificationService {
   }): Promise<Notification> {
     const notification = await notificationRepository.create(data);
     await this.pushRealtime([data.userId], notification);
+    await emailService.sendNotification([data.userId], data);
     return notification;
   }
 
@@ -27,15 +29,25 @@ export class NotificationService {
       entityType?: NotificationEntityType | null;
       entityId?: number | null;
     },
+    // `forceEmail` sends the email copy even when MAIL_NOTIFICATIONS=false, for
+    // notifications whose whole point is to reach the recipient's inbox.
+    options: { forceEmail?: boolean } = {},
   ): Promise<number> {
     if (userIds.length === 0) return 0;
     const notifications = await notificationRepository.createMany(userIds, body);
-    
+
     // Group by user and push to each
     for (const n of notifications) {
       await this.pushRealtime([n.userId], n);
     }
-    
+
+    // Mirror by email (no-op unless SMTP is configured; never throws).
+    await emailService.sendNotification(
+      notifications.map((n) => n.userId),
+      body,
+      { force: options.forceEmail },
+    );
+
     return notifications.length;
   }
 

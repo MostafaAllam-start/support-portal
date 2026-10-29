@@ -6,7 +6,7 @@ import type { BrandKey } from "@/lib/companies";
 
 export async function LandingHero({ brand }: { brand: BrandKey }) {
   const t = await getTranslations("Landing");
-  // Signed-in visitors don't need the "get started" / "contact us" CTAs.
+  // Signed-in visitors don't need the "sign in" / "contact us" CTAs.
   const me = await userService.currentUser();
 
   return (
@@ -23,7 +23,7 @@ export async function LandingHero({ brand }: { brand: BrandKey }) {
         {!me && (
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg">
-              <Link href="/register">{t("hero.primary")}</Link>
+              <Link href="/login">{t("hero.primary")}</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <a href="#contact">{t("hero.secondary")}</a>

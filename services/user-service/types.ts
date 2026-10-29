@@ -1,10 +1,10 @@
 import type { z } from "zod";
 import type { User } from "@/app/generated/prisma/client";
 import type { UserRole } from "@/lib/auth/roles";
-import type { loginSchema, registerSchema, updateUserSchema } from "./schemas";
+import type { loginSchema, createUserSchema, updateUserSchema } from "./schemas";
 
 export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 // A user with the password field stripped — the shape returned by every service

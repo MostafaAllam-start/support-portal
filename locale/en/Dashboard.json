@@ -12,7 +12,8 @@
     "suggestions": "Suggestions",
     "myTickets": "My Tickets",
     "reportedTickets": "Reported Tickets",
-    "projectTickets": "Project Tickets"
+    "projectTickets": "Project Tickets",
+    "requests": "Requests"
   },
   "kpis": {
     "title": "KPIs",
@@ -71,6 +72,7 @@
       "name": "Name",
       "username": "Username",
       "email": "Email",
+      "emailHint": "The username and a generated password will be emailed to this address.",
       "admin": "Administrator",
       "adminHint": "Full access to every company and all management.",
       "adminLocked": "The default admin can't be demoted.",
@@ -99,14 +101,19 @@
         "nameRequired": "Name is required",
         "usernameMin": "Username must be at least 3 characters",
         "usernameFormat": "Username may only contain letters, numbers, and . _ -",
+        "emailRequired": "Email is required — the login details are sent to it",
         "emailInvalid": "Enter a valid email address",
         "passwordMin": "Password must be at least 8 characters",
         "usernameTaken": "This username is already taken",
-        "emailRegistered": "This email is already registered"
-      }
+        "emailRegistered": "This email is already registered",
+        "emailNotConfigured": "Email delivery isn't configured, so the new user's login details can't be sent. Configure SMTP and try again.",
+        "credentialsEmailFailed": "The login details couldn't be emailed, so the user was not created. Check the email address and try again."
+      },
+      "systemSupport": "System support",
+      "systemSupportHint": "Works the website requests and sees only the Requests page."
     },
     "toast": {
-      "created": "User created.",
+      "created": "User created. Their login details were emailed to them.",
       "updated": "User updated.",
       "disabled": "User disabled.",
       "enabled": "User enabled."
@@ -462,6 +469,70 @@
     "in_progress": "In progress",
     "closed": "Closed"
   },
+  "requests": {
+    "title": "Requests",
+    "subtitle": "Demo requests sent from the ECM+ website.",
+    "hint": "Double-click a row to see the full request.",
+    "filterLabel": "Filter by status",
+    "filterAll": "All",
+    "received": "Received",
+    "name": "Name",
+    "organization": "Organization",
+    "email": "Email",
+    "modules": "Modules",
+    "statusLabel": "Status",
+    "actions": "Actions",
+    "empty": "No requests here yet.",
+    "none": "—",
+    "view": "View details",
+    "notifyAdmin": "Notify admin",
+    "markContacted": "Mark as contacted",
+    "close": "Close request",
+    "reopen": "Reopen",
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "admin_notified": "Admin notified",
+      "closed": "Closed"
+    },
+    "moduleNames": {
+      "documents": "Documents",
+      "correspondence": "Correspondence",
+      "processes": "Business processes",
+      "meetings": "Meetings"
+    },
+    "details": {
+      "title": "Request #{id}",
+      "from": "From {name}, {organization}",
+      "language": "Sent from",
+      "languages": {
+        "en": "English site",
+        "ar": "Arabic site"
+      },
+      "adminNotified": "Admin notified",
+      "adminNotifiedBy": "{date} by {name}",
+      "message": "Message",
+      "noMessage": "No message.",
+      "close": "Close"
+    },
+    "notify": {
+      "title": "Notify admin to create a support account",
+      "description": "Every admin gets an email and a real-time notification asking them to create a support portal account for {name} ({email}) from {organization}.",
+      "already": "An admin was already notified on {date} by {name}.",
+      "cancel": "Cancel",
+      "confirm": "Notify admin",
+      "again": "Notify again"
+    },
+    "toast": {
+      "updated": "Request updated.",
+      "notified": "The admins have been notified."
+    },
+    "errors": {
+      "notFound": "This request no longer exists.",
+      "noAdmins": "There is no other active admin to notify.",
+      "invalid": "Invalid request."
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "You're all caught up.",
@@ -502,10 +573,19 @@
       "suggestionCreated": {
         "title": "New suggestion: {title}",
         "details": "A user submitted a new suggestion: {title}"
+      },
+      "siteRequestSubmitted": {
+        "title": "New demo request from {organization}",
+        "details": "{name} from {organization} sent a demo request from the website."
+      },
+      "accountRequested": {
+        "title": "Support account requested: {organization}",
+        "details": "{actor} asks you to create a support portal account for {name} ({email}) from {organization}."
       }
     }
   },
   "account": "Account",
   "logout": "Log out",
-  "toggleSidebar": "Toggle sidebar"
+  "toggleSidebar": "Toggle sidebar",
+  "settings": "Settings"
 }

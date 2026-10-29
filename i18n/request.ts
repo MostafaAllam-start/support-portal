@@ -16,6 +16,7 @@ const NAMESPACES = [
   "Tickets",
   "CompanySelect",
   "Profile",
+  "Emails",
 ] as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {

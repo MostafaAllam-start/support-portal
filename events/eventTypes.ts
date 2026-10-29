@@ -7,6 +7,25 @@ export enum DomainEventType {
   SUGGESTION_CREATED = "SUGGESTION_CREATED",
   TICKET_REPORT_SUBMITTED = "TICKET_REPORT_SUBMITTED",
   TICKET_REPORT_REPLY_ADDED = "TICKET_REPORT_REPLY_ADDED",
+  SITE_REQUEST_SUBMITTED = "SITE_REQUEST_SUBMITTED",
+  SITE_REQUEST_ADMIN_NOTIFIED = "SITE_REQUEST_ADMIN_NOTIFIED",
+}
+
+// A visitor sent the branding site's demo form.
+export interface SiteRequestSubmittedPayload {
+  requestId: number;
+  name: string;
+  organization: string;
+}
+
+// System support asked the admins to create a support account for a request's
+// client.
+export interface SiteRequestAdminNotifiedPayload {
+  requestId: number;
+  actorId: number;
+  name: string;
+  email: string;
+  organization: string;
 }
 
 export interface TicketCreatedPayload {
@@ -76,4 +95,6 @@ export interface DomainEventMap {
   [DomainEventType.SUGGESTION_CREATED]: SuggestionCreatedPayload;
   [DomainEventType.TICKET_REPORT_SUBMITTED]: TicketReportSubmittedPayload;
   [DomainEventType.TICKET_REPORT_REPLY_ADDED]: TicketReportReplyAddedPayload;
+  [DomainEventType.SITE_REQUEST_SUBMITTED]: SiteRequestSubmittedPayload;
+  [DomainEventType.SITE_REQUEST_ADMIN_NOTIFIED]: SiteRequestAdminNotifiedPayload;
 }
