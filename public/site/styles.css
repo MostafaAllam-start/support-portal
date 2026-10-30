@@ -1908,8 +1908,8 @@ h3:lang(ar),
   .hero ~ section .section-lead { margin-block-start: 12px; font-size: 1.0625rem; }
   .hero ~ section .section-lead:lang(ar) { line-height: 1.7; }
 
-  /* Split head: eyebrow and title on the start side, the lead beside them. */
-  .suite .section-head,
+  /* Split head: eyebrow and title on the start side, the lead beside them. The
+     suite keeps the stacked head, with its lead under the title. */
   .deploy .section-head,
   .band__copy {
     max-inline-size: none;
@@ -1918,9 +1918,9 @@ h3:lang(ar),
     column-gap: 48px;
     align-items: end;
   }
-  .suite .section-head > .eyebrow, .deploy .section-head > .eyebrow, .band__copy > .eyebrow { grid-column: 1; grid-row: 1; }
-  .suite .section-head > h2, .deploy .section-head > h2, .band__copy > h2 { grid-column: 1; grid-row: 2; }
-  .suite .section-head > .section-lead, .deploy .section-head > .section-lead, .band__copy > .section-lead { grid-column: 2; grid-row: 1 / 3; margin: 0; }
+  .deploy .section-head > .eyebrow, .band__copy > .eyebrow { grid-column: 1; grid-row: 1; }
+  .deploy .section-head > h2, .band__copy > h2 { grid-column: 1; grid-row: 2; }
+  .deploy .section-head > .section-lead, .band__copy > .section-lead { grid-column: 2; grid-row: 1 / 3; margin: 0; }
 
   /* 1. Hero: exactly the fold. */
   .hero {
