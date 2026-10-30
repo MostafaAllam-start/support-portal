@@ -15,7 +15,7 @@ export default async function RequestsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requireRole(UserRole.SystemSupport, UserRole.Admin);
+  const user = await requireRole(UserRole.SystemSupport, UserRole.Admin);
   const t = await getTranslations("Dashboard.requests");
 
   const [requests, { id }] = await Promise.all([
@@ -34,6 +34,7 @@ export default async function RequestsPage({
 
       <RequestsTable
         initialOpenId={Number.isInteger(openId) && openId > 0 ? openId : null}
+        canNotifyAdmin={user.userRole !== UserRole.Admin}
         requests={requests.map((request) => ({
           id: request.id,
           name: request.name,
@@ -41,7 +42,6 @@ export default async function RequestsPage({
           organization: request.organization,
           modules: request.modules,
           message: request.message,
-          locale: request.locale,
           status: request.status,
           createdAt: request.createdAt.toISOString(),
           adminNotifiedAt: request.adminNotifiedAt?.toISOString() ?? null,

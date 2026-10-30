@@ -504,11 +504,6 @@
     "details": {
       "title": "Request #{id}",
       "from": "From {name}, {organization}",
-      "language": "Sent from",
-      "languages": {
-        "en": "English site",
-        "ar": "Arabic site"
-      },
       "adminNotified": "Admin notified",
       "adminNotifiedBy": "{date} by {name}",
       "message": "Message",
