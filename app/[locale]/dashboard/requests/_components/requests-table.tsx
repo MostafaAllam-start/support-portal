@@ -54,7 +54,6 @@ export type RequestItem = {
   organization: string;
   modules: string[];
   message: string | null;
-  locale: string;
   status: Status;
   createdAt: string; // ISO
   adminNotifiedAt: string | null; // ISO
@@ -124,9 +123,12 @@ function useRequestAction(
 export function RequestsTable({
   requests,
   initialOpenId,
+  canNotifyAdmin,
 }: {
   requests: RequestItem[];
   initialOpenId: number | null;
+  // False for admins: they would only be notifying themselves.
+  canNotifyAdmin: boolean;
 }) {
   const t = useTranslations("Dashboard.requests");
   const [filter, setFilter] = useState<Filter>("all");
@@ -212,7 +214,7 @@ export function RequestsTable({
                     <RequestRowActions
                       request={request}
                       onView={() => setDetailsId(request.id)}
-                      onNotify={() => setNotifyId(request.id)}
+                      onNotify={canNotifyAdmin ? () => setNotifyId(request.id) : undefined}
                     />
                   </TableCell>
                 </TableRow>
@@ -225,10 +227,14 @@ export function RequestsTable({
       <RequestDetailsDialog
         request={details}
         onOpenChange={(open) => !open && setDetailsId(null)}
-        onNotify={(id) => {
-          setDetailsId(null);
-          setNotifyId(id);
-        }}
+        onNotify={
+          canNotifyAdmin
+            ? (id) => {
+                setDetailsId(null);
+                setNotifyId(id);
+              }
+            : undefined
+        }
       />
       <NotifyAdminDialog
         request={notifyTarget}
@@ -261,7 +267,8 @@ function RequestRowActions({
 }: {
   request: RequestItem;
   onView: () => void;
-  onNotify: () => void;
+  // Omitted when the viewer can't notify the admins (they are one).
+  onNotify?: () => void;
 }) {
   const t = useTranslations("Dashboard.requests");
   const status = useRequestAction(setRequestStatusAction, t("toast.updated"));
@@ -280,10 +287,12 @@ function RequestRowActions({
             <Eye />
             {t("view")}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={onNotify}>
-            <BellRing />
-            {t("notifyAdmin")}
-          </DropdownMenuItem>
+          {onNotify && (
+            <DropdownMenuItem onSelect={onNotify}>
+              <BellRing />
+              {t("notifyAdmin")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           {request.status === "closed" ? (
             <DropdownMenuItem onSelect={() => status.run({ id: String(request.id), status: "new" })}>
@@ -321,7 +330,8 @@ function RequestDetailsDialog({
 }: {
   request: RequestItem | null;
   onOpenChange: (open: boolean) => void;
-  onNotify: (id: number) => void;
+  // Omitted when the viewer can't notify the admins (they are one).
+  onNotify?: (id: number) => void;
 }) {
   const t = useTranslations("Dashboard.requests");
 
@@ -353,9 +363,6 @@ function RequestDetailsDialog({
                     <ModuleBadges modules={request.modules} />
                   </span>
                 </DetailRow>
-                <DetailRow label={t("details.language")}>
-                  {t(`details.languages.${request.locale === "ar" ? "ar" : "en"}`)}
-                </DetailRow>
                 <DetailRow label={t("received")}>{formatDateTime(request.createdAt)}</DetailRow>
                 {request.adminNotifiedAt && (
                   <DetailRow label={t("details.adminNotified")}>
@@ -386,10 +393,12 @@ function RequestDetailsDialog({
                   {t("details.close")}
                 </Button>
               </DialogClose>
-              <Button type="button" onClick={() => onNotify(request.id)}>
-                <BellRing />
-                {t("notifyAdmin")}
-              </Button>
+              {onNotify && (
+                <Button type="button" onClick={() => onNotify(request.id)}>
+                  <BellRing />
+                  {t("notifyAdmin")}
+                </Button>
+              )}
             </DialogFooter>
           </>
         )}

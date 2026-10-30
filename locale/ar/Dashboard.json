@@ -504,11 +504,6 @@
     "details": {
       "title": "الطلب رقم {id}",
       "from": "من {name}، {organization}",
-      "language": "أُرسل من",
-      "languages": {
-        "en": "الموقع الإنجليزي",
-        "ar": "الموقع العربي"
-      },
       "adminNotified": "إشعار المسؤول",
       "adminNotifiedBy": "{date} بواسطة {name}",
       "message": "الرسالة",
