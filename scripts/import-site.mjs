@@ -28,6 +28,16 @@ const TEMPLATE_PREFIX = "/templates/portico/";
 // PROMPTS.md) stay out of public/.
 const ASSET_DIRS = ["brand", "brands", "photos/portico"];
 
+// The template's favicon.svg is an approximation of the logo; the pages use the
+// official ECM+ logo instead, rendered square in public/assets/favicon (outside the
+// folders this script replaces, so a re-import keeps it).
+const TEMPLATE_FAVICON = /<link rel="icon" href="\/assets\/brand\/favicon\.svg"[^>]*>/;
+const FAVICON_LINKS = [
+  '<link rel="icon" href="/assets/favicon/ecmplus-32.png" type="image/png" sizes="32x32">',
+  '<link rel="icon" href="/assets/favicon/ecmplus-192.png" type="image/png" sizes="192x192">',
+  '<link rel="apple-touch-icon" href="/assets/favicon/ecmplus-192.png">',
+].join("\n  ");
+
 const URL_ATTRS = /\b(href|src|action|poster)="([^"]*)"/g;
 const SRCSET_ATTRS = /\b(srcset|imagesrcset)="([^"]*)"/g;
 const BASE = "http://templates.local";
@@ -63,6 +73,7 @@ function transformHtml(html, filePath, lang) {
   let out = html
     .replace(URL_ATTRS, (_, attr, value) => `${attr}="${rewriteUrl(value, filePath)}"`)
     .replace(SRCSET_ATTRS, (_, attr, value) => `${attr}="${rewriteSrcset(value, filePath)}"`)
+    .replace(TEMPLATE_FAVICON, FAVICON_LINKS)
     // The portal's additions (frosted header, toasts) load after the template's CSS.
     .replace(
       "</head>",
