@@ -58,6 +58,11 @@
   --surface: #FFFFFF;
   --surface-2: #EAE7E1;
   --header-bg: #FFFFFF;
+  --header-glass: rgba(255, 255, 255, .62);
+  --header-glass-line: rgba(21, 26, 34, .08);
+  --toast-bg: #FFFFFF;
+  --toast-ink: #0A0A0A;
+  --toast-line: #E5E5E5;
   --ink: #151A22;
   --ink-2: #333A46;
   --muted: #4A5565;
@@ -114,7 +119,8 @@
   --r-photo: 16px;
   --r-card: 12px;
   --r-btn: 8px;
-  --header-h: 72px;
+  --header-h: 60px;
+  --header-hit: 40px;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
@@ -126,6 +132,11 @@
     --surface: #171C25;
     --surface-2: #1F2630;
     --header-bg: #10141B;
+    --header-glass: rgba(16, 20, 27, .6);
+    --header-glass-line: rgba(255, 255, 255, .08);
+    --toast-bg: #171717;
+    --toast-ink: #FAFAFA;
+    --toast-line: rgba(255, 255, 255, .1);
     --ink: #F2F3F5;
     --ink-2: #C9CFD8;
     --muted: #A6AEBB;
@@ -472,13 +483,67 @@ html:not(.js) .js-only { display: none !important; }
   background: var(--header-bg);
   border-block-end: 1px solid var(--line);
 }
+/* Frosted where supported: the section scrolling beneath tints the bar. The mobile
+   menu panel keeps the solid --header-bg so its links stay legible. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .site-header {
+    background: var(--header-glass);
+    border-block-end-color: var(--header-glass-line);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header {
+    background: var(--header-bg);
+    border-block-end-color: var(--line);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Once the page leaves the top the bar lifts off it, and a gold signal runs along its
+   hairline as far as the visitor has read. Scroll-driven, so CSS only; without support
+   the bar stays flat. */
+@supports (animation-timeline: scroll()) {
+  .site-header {
+    animation: header-lift linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 96px;
+  }
+  .site-header::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    block-size: 2px;
+    background: linear-gradient(90deg, var(--gold-fold), var(--gold) 85%, #F0B100);
+    transform: scaleX(0);
+    transform-origin: left;
+    pointer-events: none;
+    animation: header-progress linear both;
+    animation-timeline: scroll(root);
+  }
+  [dir="rtl"] .site-header::after {
+    background: linear-gradient(270deg, var(--gold-fold), var(--gold) 85%, #F0B100);
+    transform-origin: right;
+  }
+}
+@keyframes header-lift {
+  to { box-shadow: var(--shadow-sm); }
+}
+@keyframes header-progress {
+  to { transform: scaleX(1); }
+}
 
 .header__bar {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   min-block-size: var(--header-h);
 }
+/* Beats ecmlogo.css, which loads later and sets its own phone size. */
+.site-header .header__bar .brand.ecmlogo { --ecmlogo-h: 44px; }
 
 .header__panel {
   display: flex;
@@ -499,7 +564,7 @@ html:not(.js) .js-only { display: none !important; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-block-size: 44px;
+  min-block-size: var(--header-hit);
   padding: 0 12px;
   border: 0;
   border-radius: var(--r-btn);
@@ -516,7 +581,27 @@ html:not(.js) .js-only { display: none !important; }
 .nav__chev { inline-size: 14px; block-size: 14px; color: var(--muted); transition: transform .15s var(--ease); }
 .nav__trigger[aria-expanded="true"] .nav__chev { transform: rotate(180deg); color: var(--gold-text); }
 
-.header__utility { display: flex; align-items: center; gap: 12px; }
+/* Desktop: a gold hairline under the link marks hover, the open menu and the current page. */
+@media (min-width: 1100px) {
+  .nav__link::before {
+    content: "";
+    position: absolute;
+    inset-inline: 12px;
+    inset-block-end: 3px;
+    block-size: 2px;
+    border-radius: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transition: transform .2s var(--ease);
+  }
+  .nav__link:hover { background: transparent; }
+  .nav__link:hover::before,
+  .nav__trigger[aria-expanded="true"]::before,
+  .nav__link[aria-current="page"]::before { transform: scaleX(1); }
+}
+
+.header__utility { display: flex; align-items: center; gap: 8px; }
+.header__cta { min-block-size: var(--header-hit); padding: 8px 16px; font-size: .9375rem; }
 
 /* Menu panel: click-toggled, 150ms fade + translate. */
 .menu-panel {
@@ -536,7 +621,7 @@ html:not(.js) .js-only { display: none !important; }
 html:not(.js) .menu-panel { display: none; }
 
 .dropdown {
-  inset-block-start: calc(100% + (var(--header-h) - 44px) / 2 + 1px);
+  inset-block-start: calc(100% + (var(--header-h) - var(--header-hit)) / 2 + 1px);
   inset-inline-start: 0;
   inline-size: max-content;
   min-inline-size: 300px;
@@ -620,8 +705,8 @@ html:not(.js) .menu-panel { display: none; }
   display: none;
   align-items: center;
   gap: 10px;
-  min-block-size: 44px;
-  min-inline-size: 44px;
+  min-block-size: var(--header-hit);
+  min-inline-size: var(--header-hit);
   justify-content: center;
   padding: 0 14px;
   border: 1px solid var(--line-strong);
@@ -655,7 +740,7 @@ html:not(.js) .menu-panel { display: none; }
 .lang-switch {
   display: inline-flex;
   align-items: center;
-  min-block-size: 44px;
+  min-block-size: var(--header-hit);
   padding: 0 12px;
   border-radius: var(--r-btn);
   color: var(--ink-2);
@@ -672,8 +757,8 @@ html:not(.js) .menu-panel { display: none; }
   display: inline-grid;
   place-items: center;
   flex: none;
-  inline-size: 44px;
-  block-size: 44px;
+  inline-size: var(--header-hit);
+  block-size: var(--header-hit);
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-btn);
@@ -692,6 +777,7 @@ html:not(.js) .theme-toggle { display: none; }
 .header__quick { display: none; align-items: center; gap: 4px; margin-inline-start: auto; }
 
 @media (max-width: 1099.98px) {
+  :root { --header-h: 56px; }
   .header__bar { gap: 12px; }
   .header__quick { display: flex; }
   .nav-toggle { display: inline-flex; }
@@ -773,8 +859,10 @@ html:not(.js) .theme-toggle { display: none; }
   .dropdown--suite .dropdown__list a { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .dropdown__all { padding-inline: 0; border: 0; }
 
-  /* The language and theme controls sit in the bar (.header__quick) at this size. */
+  /* The language and theme controls sit in the bar (.header__quick) at this size;
+     the demo button closes the panel. */
   .header__utility { display: none; }
+  .header__cta { margin-block-start: 20px; min-block-size: 48px; font-size: 1rem; }
 
   /* Without JS the panel is simply shown in flow. */
   html:not(.js) .site-header { position: relative; }
@@ -790,7 +878,7 @@ html:not(.js) .theme-toggle { display: none; }
   }
 }
 @media (max-width: 479.98px) {
-  .site-header .brand.ecmlogo { --ecmlogo-h: 42px; }
+  .site-header .header__bar .brand.ecmlogo { --ecmlogo-h: 38px; }
   .header__bar { gap: 8px; }
   .header__quick .lang-switch { padding-inline: 8px; }
   .nav-toggle { padding: 0; }
@@ -805,7 +893,8 @@ html:not(.js) .theme-toggle { display: none; }
 }
 
 /* ==========================================================================
-   1. Hero — full-bleed photograph, scrim on the start side, the module seal on the photo
+   1. Hero — the title page: the ECM+ lockup, the statement and what each module
+      delivers, on one lightly frosted card over the photograph and the content network
    ========================================================================== */
 .hero {
   position: relative;
@@ -818,43 +907,163 @@ html:not(.js) .theme-toggle { display: none; }
   background: #1B2130;
   color: var(--on-photo);
 }
-.hero__ph img { object-position: 50% 42%; }
-[dir="rtl"] .hero__ph img { object-position: 50% 42%; }
-
-.hero__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px;
-  align-items: center;
+/* The whole photograph stays in view, never cropped: it is centred at its own proportions on
+   a backdrop of its near-black, and its edges fade into it so no border shows. */
+.hero__ph { background: #111214; }
+.hero__ph img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(transparent, #000 5%, #000 95%, transparent);
+  mask-composite: intersect;
 }
-.hero__copy { max-inline-size: 600px; }
-.hero .eyebrow { color: var(--on-photo-2); }
-.hero .eyebrow::before { background: linear-gradient(90deg, var(--gold) 0 6px, rgba(232, 184, 74, .55) 6px); }
-[dir="rtl"] .hero .eyebrow::before { background: linear-gradient(270deg, var(--gold) 0 6px, rgba(232, 184, 74, .55) 6px); }
-.hero .eyebrow__no { color: var(--on-photo-gold); border-inline-end-color: rgba(232, 184, 74, .55); }
+/* A centred wash rather than a side scrim: the card carries the copy, and the photo
+   stays visible around it. */
+.hero .scrim { background: radial-gradient(85% 95% at 50% 50%, rgba(14, 20, 32, .6), rgba(14, 20, 32, .3)); }
+
+/* The content network behind the card (Majlis Grid's seal without its centre): a dotted
+   mesh with traces and blinking nodes. */
+.hero__visual {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.hero__net {
+  --seal-line: #D9A21B;
+  --seal-pulse: #F0B100;
+  position: relative;
+  inline-size: min(1240px, 100%);
+  block-size: 100%;
+  opacity: .55;
+}
+.seal-net {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--seal-line);
+}
+.seal-net pattern circle { fill: currentColor; fill-opacity: .4; }
+.seal-net__mesh { fill: none; stroke: currentColor; stroke-width: .8; stroke-opacity: .34; }
+.seal-net__traces { fill: none; stroke: currentColor; stroke-width: 1.1; stroke-opacity: .5; stroke-linejoin: round; }
+.seal-net__nodes .n { fill: currentColor; fill-opacity: .55; }
+.seal-net__nodes .n--live { fill: var(--seal-pulse); fill-opacity: 1; animation: seal-blink 4.8s ease-in-out infinite; }
+.seal-net__nodes .n--live:nth-child(odd) { animation-delay: -2.4s; }
+.seal-net__nodes .pad { fill: none; stroke: currentColor; stroke-width: 1.2; }
+@keyframes seal-blink {
+  0%, 100% { fill-opacity: .45; }
+  50% { fill-opacity: 1; }
+}
+
+.hero__grid { display: grid; justify-items: center; }
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-inline-size: 1120px;
+  padding: 24px 36px;
+  text-align: center;
+}
+/* Barely frosted, so the photograph still reads through the card. */
+.hero__plate {
+  background: rgba(14, 20, 32, .72);
+  -webkit-backdrop-filter: blur(2px) saturate(1.1);
+  backdrop-filter: blur(2px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: var(--r-photo);
+  box-shadow: 0 32px 56px -32px rgba(0, 0, 0, .6);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero__plate { background: rgba(14, 20, 32, .9); }
+}
+/* The lockup at hero scale: the dark-surface rendition on screen, the light one in print
+   (ecmlogo.css swaps them). */
+.hero__logo .ecmlogo__img { block-size: clamp(60px, 9vh, 92px); }
 
 .hero h1 {
+  max-inline-size: 26ch;
+  margin-block-start: 12px;
   color: var(--on-photo);
-  font-size: clamp(2.25rem, 1.2rem + 3vw, 3.375rem);
-  line-height: 1.08;
+  font-size: clamp(2rem, 1.1rem + 2.2vw, 3rem);
+  line-height: 1.1;
   letter-spacing: -.02em;
 }
 .hero__lead {
-  margin: 22px 0 0;
-  max-inline-size: 52ch;
-  font-size: 1.1875rem;
+  margin: 8px 0 0;
+  max-inline-size: 84ch;
+  font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--on-photo-2);
+  text-wrap: balance;
 }
-.hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-block-start: 32px; }
+.hero__ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-block-start: 18px; }
 
-/* The integration seal (section 5 styles) sits straight on the photograph. Its badges and
-   labels keep the plate colour, so they read over any part of the photo. */
-.hero__visual .seal {
-  --plate-bg: var(--deploy-bg);
-  block-size: clamp(320px, 30vw, 400px);
+/* What the visitor's organization gets, one outcome per module, under a gold hairline.
+   A tile's badge glows while the tile is hovered or focused. */
+.hero__expect { inline-size: 100%; margin-block-start: 16px; }
+.hero__rule {
+  block-size: 1px;
+  margin-block: 1px 15px;
+  background: linear-gradient(90deg, transparent, rgba(232, 184, 74, .55) 18%, rgba(232, 184, 74, .55) 82%, transparent);
 }
-
+.hero__tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: start;
+}
+.hero__tiles a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 2px 12px;
+  box-sizing: border-box;
+  block-size: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .04);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .2s, background-color .2s;
+}
+.hero__tiles a:hover { border-color: rgba(232, 184, 74, .6); background: rgba(255, 255, 255, .07); }
+.hero__badge {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  inline-size: 38px;
+  block-size: 38px;
+  border: 1px solid rgba(217, 162, 27, .6);
+  border-radius: 50%;
+  color: #F0B100;
+  transition: border-color .2s, background-color .2s;
+}
+.hero__badge .icon { inline-size: 18px; block-size: 18px; stroke-width: 1.8; }
+.hero__tiles a:hover .hero__badge,
+.hero__tiles a:focus-visible .hero__badge {
+  border-color: #F0B100;
+  background: rgba(240, 177, 0, .08);
+  animation: hero-badge 1.6s ease-out infinite;
+}
+@keyframes hero-badge {
+  from { box-shadow: 0 0 0 0 rgba(240, 177, 0, .4); }
+  to { box-shadow: 0 0 0 8px rgba(240, 177, 0, 0); }
+}
+.hero__name { font: 600 .9375rem/1.4 var(--font-body); }
+.hero__line { grid-column: 2; font-size: .8125rem; line-height: 1.6; color: var(--on-photo-2); text-wrap: pretty; }
 
 /* ==========================================================================
    2. Four modules — photo with a folder tab, plate below
@@ -1216,7 +1425,8 @@ html:not(.js) .theme-toggle { display: none; }
 .paper__sigline { display: block; inline-size: 130px; border-block-start: 1px solid var(--paper-sigline); }
 .paper__sigcap { font: 500 11px/1.2 var(--font-body); color: var(--paper-muted); }
 
-/* The scanned tile inks in, gold brackets frame it, and the trace is drawn to the record. */
+/* The scanned tile inks in, gold brackets frame it, a scan line keeps sweeping it, and the
+   trace is drawn to the record. */
 .paper__mark {
   position: absolute;
   right: 0;
@@ -1230,15 +1440,15 @@ html:not(.js) .theme-toggle { display: none; }
 .reveal .evidence:not(.in) .paper__markface { opacity: 0; }
 .paper__markface .dm-ink { fill: var(--paper-ink); }
 .paper__markface text { font: 8.5px ui-monospace, Consolas, Menlo, monospace; letter-spacing: .4px; }
-.paper__markface .brackets { fill: none; stroke: var(--paper-gold); stroke-width: 1.5; }
+.paper__markface .brackets { fill: none; stroke: var(--paper-gold); stroke-width: 2; }
 .evidence.in .paper__markface { opacity: 1; transition: opacity .35s var(--ease) 120ms; }
-.paper__scan { position: absolute; left: 32px; right: 32px; top: 4px; block-size: 1.5px; background: var(--paper-gold); opacity: 0; }
-.evidence.in .paper__scan { animation: scan 800ms var(--ease) 80ms 1 both; }
+.paper__scan { position: absolute; left: 20px; right: 20px; top: 3px; block-size: 1.5px; background: var(--paper-gold); opacity: 0; }
+.evidence.in .paper__scan { animation: scan 2.8s var(--ease) 80ms infinite both; }
+/* One sweep down the frame in about 0.8s, then a rest before the next. */
 @keyframes scan {
   0% { opacity: 0; transform: translateY(0); }
-  20% { opacity: .9; }
-  80% { opacity: .9; }
-  100% { opacity: 0; transform: translateY(50px); }
+  6%, 24% { opacity: .9; }
+  30%, 100% { opacity: 0; transform: translateY(57px); }
 }
 
 .trace { position: absolute; inset: 0; z-index: 4; inline-size: 100%; block-size: 100%; overflow: visible; pointer-events: none; }
@@ -1360,163 +1570,6 @@ html:not(.js) .theme-toggle { display: none; }
 @keyframes sweep {
   from { background-position: 100% 0; }
   to { background-position: 0% 0; }
-}
-
-/* Seal (Majlis Grid): ECM+ at the centre of a living network. Correspond, Automate
-   and Convene sit above it and Archive below; each module sends a signal in, and
-   ECM+ answers all four. One 4.4s cycle. */
-.seal {
-  --cycle: 4.4s;
-  --seal-line: #D9A21B;
-  --seal-pulse: #F0B100;
-  --seal-glow: rgba(217, 162, 27, .16);
-  position: relative;
-  block-size: 320px;
-  color: var(--seal-line);
-  background: radial-gradient(closest-side, var(--seal-glow), transparent) 50% 50% / 86% 86% no-repeat;
-}
-.seal-net,
-.seal-links {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  pointer-events: none;
-}
-.seal-net { color: var(--seal-line); }
-.seal-net pattern circle { fill: currentColor; fill-opacity: .4; }
-.seal-net__mesh { fill: none; stroke: currentColor; stroke-width: .8; stroke-opacity: .34; }
-.seal-net__traces { fill: none; stroke: currentColor; stroke-width: 1.1; stroke-opacity: .5; stroke-linejoin: round; }
-.seal-net__nodes .n { fill: currentColor; fill-opacity: .55; }
-.seal-net__nodes .n--live { fill: var(--seal-pulse); fill-opacity: 1; animation: seal-blink 4.8s ease-in-out infinite; }
-.seal-net__nodes .n--live:nth-child(odd) { animation-delay: -2.4s; }
-.seal-net__nodes .pad { fill: var(--plate-bg); stroke: currentColor; stroke-width: 1.2; }
-.seal-net__orbit { transform-box: fill-box; transform-origin: center; animation: seal-orbit 48s linear infinite; }
-.seal-net__orbit .ring { fill: none; stroke: currentColor; stroke-width: .9; stroke-opacity: .45; stroke-dasharray: 2 6; }
-.seal-net__orbit .sat { fill: var(--seal-pulse); }
-.seal-net__ping {
-  fill: none;
-  stroke: var(--seal-pulse);
-  stroke-width: 1.4;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: seal-ping var(--cycle) ease-out infinite;
-}
-.seal-net__plate { fill: var(--plate-bg); }
-
-.seal-links__line { fill: none; stroke: var(--seal-line); stroke-width: 1.3; stroke-opacity: .7; }
-.seal-links__pulses path {
-  fill: none;
-  stroke: var(--seal-pulse);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  stroke-dasharray: 22 100;
-  stroke-dashoffset: 22;
-  opacity: 0;
-}
-.seal-links__pulses .in { animation: seal-in var(--cycle) cubic-bezier(.5, 0, .3, 1) infinite; animation-delay: calc(var(--k, 0) * 90ms); }
-.seal-links__pulses .out { animation: seal-out var(--cycle) cubic-bezier(.3, 0, .5, 1) infinite; }
-
-@keyframes seal-in {
-  0% { stroke-dashoffset: 22; opacity: 1; }
-  38% { stroke-dashoffset: -100; opacity: 1; }
-  39%, 100% { stroke-dashoffset: -100; opacity: 0; }
-}
-@keyframes seal-out {
-  0%, 52% { stroke-dashoffset: 22; opacity: 0; }
-  53% { stroke-dashoffset: 22; opacity: 1; }
-  90% { stroke-dashoffset: -100; opacity: 1; }
-  91%, 100% { stroke-dashoffset: -100; opacity: 0; }
-}
-@keyframes seal-ping {
-  0%, 40% { opacity: 0; transform: scale(.86); }
-  46% { opacity: .9; transform: scale(.94); }
-  64%, 100% { opacity: 0; transform: scale(1.32); }
-}
-@keyframes seal-node {
-  0%, 100% { border-color: rgba(217, 162, 27, .6); box-shadow: 0 0 0 0 rgba(240, 177, 0, 0); }
-  6% { border-color: #F0B100; box-shadow: 0 0 0 5px rgba(240, 177, 0, .22); }
-  16%, 84% { border-color: rgba(217, 162, 27, .6); box-shadow: 0 0 0 0 rgba(240, 177, 0, 0); }
-  92% { border-color: #F0B100; box-shadow: 0 0 0 5px rgba(240, 177, 0, .22); }
-}
-@keyframes seal-core {
-  0%, 40%, 70%, 100% { filter: none; }
-  48% { filter: drop-shadow(0 0 6px rgba(240, 177, 0, .55)); }
-}
-@keyframes seal-blink {
-  0%, 100% { fill-opacity: .45; }
-  50% { fill-opacity: 1; }
-}
-@keyframes seal-orbit {
-  to { transform: rotate(360deg); }
-}
-
-/* The ring mark with the ECM+ word, always the dark-surface rendition here. */
-.mark {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  inline-size: var(--mark-w, 116px);
-  aspect-ratio: 200 / 116;
-  direction: ltr;
-}
-.mark img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
-.mark__word {
-  position: relative;
-  font: 700 calc(var(--mark-w, 116px) * .2) / 1 var(--font-latin);
-  letter-spacing: -.01em;
-  color: #F2F3F5;
-  transform: translateY(-6%);
-}
-.seal__mark {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  block-size: calc(var(--mark-w, 116px) * .58);
-  margin: auto;
-  animation: seal-core var(--cycle) ease-in-out infinite;
-}
-
-/* Module nodes: top row anchored on the badge's bottom edge (y 30%), Archive on its
-   top edge (y 72%) — the same points the connectors use. */
-.seal__nodes { position: absolute; inset: 0; z-index: 1; }
-.seal__node {
-  position: absolute;
-  top: 30%;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 5px;
-  translate: -50% -100%;
-}
-.seal__node--correspond { left: 18%; }
-.seal__node--automate { left: 50%; }
-.seal__node--convene { left: 82%; }
-[dir="rtl"] .seal__node--correspond { left: 82%; }
-[dir="rtl"] .seal__node--convene { left: 18%; }
-.seal__node--archive { top: 72%; left: 50%; flex-direction: column; translate: -50% 0; }
-.seal__badge {
-  display: grid;
-  place-items: center;
-  inline-size: 38px;
-  block-size: 38px;
-  border: 1px solid rgba(217, 162, 27, .6);
-  border-radius: 50%;
-  background: var(--plate-bg);
-  animation: seal-node var(--cycle) ease-in-out infinite;
-}
-.seal__node:nth-child(2) .seal__badge { animation-delay: 90ms; }
-.seal__node:nth-child(3) .seal__badge { animation-delay: 180ms; }
-.seal__node:nth-child(4) .seal__badge { animation-delay: 270ms; }
-.seal__icon { inline-size: 18px; block-size: 18px; fill: none; stroke: #F0B100; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.seal__label {
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--plate-bg) 86%, transparent);
-  font: 600 13px/1.3 var(--font-head);
-  color: #F2F3F5;
-  white-space: nowrap;
 }
 
 /* Works with: logo chips (Majlis Grid .prov__logo pattern). */
@@ -1898,8 +1951,8 @@ h3:lang(ar),
 /* ==========================================================================
    Desktop fold: every home-page section fits below the header (screen only).
    Scoped to the home page through `.hero ~ section`; the module and About pages
-   share this sheet but have no .hero. Budgets: 1536×730 → 657px, 1440×790 → 717px,
-   1920×970 → 897px (the header is 72px + its 1px hairline).
+   share this sheet but have no .hero. Budgets: 1536×730 → 669px, 1440×790 → 729px,
+   1920×970 → 909px (the header is 60px + its 1px hairline).
    ========================================================================== */
 @media screen and (min-width: 1180px) {
   .hero ~ section { --section-y: clamp(36px, 6vh, 64px); scroll-margin-top: calc(var(--header-h) + 1px); }
@@ -2026,14 +2079,8 @@ h3:lang(ar),
 
 @media (max-width: 959.98px) {
   .hero { min-block-size: 0; }
-  .hero .scrim { background: rgba(14, 20, 32, var(--scrim-a)); }
-  /* One column: the copy block's children join the grid, so the seal sits between the
-     lead and the buttons. */
-  .hero__grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .hero__copy { display: contents; }
-  .hero__copy > * { max-inline-size: 640px; }
-  .hero__visual { justify-self: center; inline-size: 100%; max-inline-size: 620px; margin-block-start: 32px; }
-  .hero__ctas { order: 1; }
+  .hero .scrim { background: rgba(14, 20, 32, .5); }
+  .hero__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .deploy__grid { grid-template-columns: minmax(0, 1fr); }
 
@@ -2057,8 +2104,6 @@ h3:lang(ar),
   .paper { min-block-size: 0; }
   .tracecard { margin-block-end: 0; }
 
-  .seal { block-size: 280px; --mark-w: 96px; }
-  .seal__label { font-size: 12px; padding-inline: 6px; }
   .works { padding-inline: 18px; }
 
   .band { padding-block: 64px 136px; }
@@ -2078,21 +2123,63 @@ h3:lang(ar),
 }
 
 @media (max-width: 479.98px) {
+  .hero__copy { padding: 20px 16px; }
+  .hero__logo .ecmlogo__img { block-size: 64px; }
   .hero__ctas .btn { flex: 1 1 100%; }
+  .hero__tiles { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .hero__tiles a { padding: 10px 12px; }
   .card__plate { margin-inline: 8px; padding-inline: 16px; }
   .paper { padding: 20px 16px 16px; }
   .status li + li::before { display: none; }
   .checks { grid-template-columns: minmax(0, 1fr); }
-  .seal__node--correspond { left: 17%; }
-  .seal__node--convene { left: 83%; }
-  [dir="rtl"] .seal__node--correspond { left: 83%; }
-  [dir="rtl"] .seal__node--convene { left: 17%; }
   .footer__legal { gap: 16px; }
 }
 
 /* ==========================================================================
-   Reduced motion: every animation and transition off. The bookmark rests on row 1, the seal is still with
-   no pulses or sweep, photos are fully opaque at scale 1, the trace is pre-drawn.
+   Toasts: the demo form's outcome (main.js), styled like the support portal's
+   notifications so the site and the portal read as one product. Pinned to the
+   bottom-right corner in both languages, like the portal's.
+   ========================================================================== */
+.toaster {
+  position: fixed;
+  z-index: 200;
+  inset-block-end: 24px;
+  right: 24px;
+  inline-size: 356px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toast {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--toast-line);
+  border-radius: .625rem;
+  background: var(--toast-bg);
+  color: var(--toast-ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  font: 400 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity .4s, transform .4s;
+}
+.toast.is-shown { opacity: 1; transform: none; }
+.toast .icon {
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 2;
+  margin-inline: -3px 4px;
+}
+@media (max-width: 600px) {
+  .toaster { left: 16px; right: 16px; inset-block-end: 16px; inline-size: auto; }
+}
+
+/* ==========================================================================
+   Reduced motion: every animation and transition off. The bookmark rests on row 1, the hero
+   network is still, photos are fully opaque at scale 1, the trace is pre-drawn.
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -2106,8 +2193,6 @@ h3:lang(ar),
   .reveal [data-reveal]:not(.in),
   .reveal [data-reveal].in { opacity: 1; transform: none; }
 
-  .seal-links__pulses,
-  .seal-net__ping,
   .paper__scan,
   .deploy__plate::after { display: none; }
   .ph img { opacity: 1; transform: none; }
@@ -2135,13 +2220,14 @@ h3:lang(ar),
   .site-header,
   .skip-link,
   .nav-toggle,
+  .toaster,
   .scrim,
   .contact__wash,
   .ph--bleed,
   .deploy__plate::before,
   .deploy__plate::after,
-  .seal-links__pulses,
-  .seal-net__ping,
+  .hero__visual,
+  .hero__rule,
   .paper__scan,
   .lifecycle::before { display: none !important; }
   .hero,
@@ -2151,11 +2237,14 @@ h3:lang(ar),
   .band h2,
   .hero__lead,
   .band .section-lead,
-  .hero .eyebrow,
+  .hero__name,
   .band .eyebrow { color: #000000; }
-  .hero .eyebrow__no,
   .band .eyebrow__no { color: #894B00; }
   .hero__ctas { display: none; }
+  .hero__plate { background: #FFFFFF; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; border-color: #D8D3CB; }
+  .hero__tiles a { border-color: #D8D3CB; background: none; }
+  .hero__line { color: #4A5565; }
+  .hero__badge { color: #894B00; border-color: #B98612; }
   .plate { background: #FFFFFF; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; border-color: #D8D3CB; }
   .reveal [data-reveal],
   .reveal [data-reveal]:not(.in),
@@ -2378,6 +2467,7 @@ h3:lang(ar),
   --sp-il-time: #D6ECE8; --sp-il-time-l: #22736E;  /* calendars, clocks */
   --sp-il-sec: #2E5180;  --sp-il-sec-l: #2E5180;   /* shields, locks, access (solid navy) */
   --sp-il-dev: #E8E1D3;  --sp-il-dev-l: #6E6351;   /* devices, machines, containers, places (limestone) */
+  --sp-art-bg: #F0F3F7;  --sp-art-grid: rgba(47, 90, 142, .08);   /* the tile behind each illustration */
 }
 .sp-step__art {
   position: relative;
@@ -2385,7 +2475,12 @@ h3:lang(ar),
   margin-block-end: 16px;
   border: 1px solid var(--sp-line);
   border-radius: var(--sp-radius);
-  background: color-mix(in srgb, var(--sp-accent) 7%, var(--sp-surface));
+  /* A blueprint sheet: a cool tile with a faint grid and a soft gold light from above. */
+  background:
+    radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--sp-accent) 16%, transparent), transparent 72%),
+    linear-gradient(var(--sp-art-grid) 1px, transparent 1px) 50% 50% / 14px 14px,
+    linear-gradient(90deg, var(--sp-art-grid) 1px, transparent 1px) 50% 50% / 14px 14px,
+    var(--sp-art-bg);
   color: var(--sp-ink);
 }
 .sp-step__svg { --c: var(--sp-surface); --cl: var(--sp-muted); display: block; inline-size: 100%; block-size: 100%; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
@@ -2419,6 +2514,7 @@ h3:lang(ar),
     --sp-il-time: #1F3D3E; --sp-il-time-l: #7DCAC1;
     --sp-il-sec: #3F6BAB;  --sp-il-sec-l: #9DBDEA;
     --sp-il-dev: #3A3833;  --sp-il-dev-l: #B5AFA3;
+    --sp-art-bg: #131A25;  --sp-art-grid: rgba(147, 183, 228, .07);
   }
   :root[data-theme="dark"] .sp {
     --sp-cta-bg: #1B2230;
@@ -2462,6 +2558,52 @@ h3:lang(ar),
 .sp-chip__logo--wide { inline-size: auto; block-size: 20px; }
 .sp-chip__dot { flex: none; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--sp-accent); }
 .sp-chip__glyph { flex: none; inline-size: 18px; block-size: 18px; fill: none; stroke: var(--sp-accent-text); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Works with: the head beside a grid of integration cards, each with the service's mark
+   on a white plate (in both themes, as logos need), its name and what it does here. */
+.sp-section--works .wrap { display: grid; gap: 28px 56px; }
+@media (min-width: 960px) {
+  .sp-section--works .wrap { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); align-items: start; }
+}
+.sp-works {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sp-work {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-content: start;
+  gap: 4px 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--sp-line);
+  border-radius: var(--sp-radius);
+  background: var(--sp-surface);
+  transition: border-color .2s, box-shadow .2s, transform .2s var(--ease);
+}
+.sp-work:hover { border-color: var(--line-gold); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.sp-work__mark {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  inline-size: 46px;
+  block-size: 46px;
+  border: 1px solid var(--sp-line);
+  border-radius: 12px;
+  background: var(--sp-plate);
+}
+.sp-work__mark img { display: block; inline-size: 24px; block-size: 24px; object-fit: contain; }
+.sp-work__mark .sp-work__wide { inline-size: 36px; block-size: auto; }
+.sp-work__mark svg { inline-size: 22px; block-size: 22px; fill: none; stroke: #894B00; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sp-work__name { margin: 2px 0 0; font: 600 1rem/1.35 var(--sp-head); color: var(--sp-ink); }
+.sp-work__text { grid-column: 2; margin: 0; font-size: .875rem; line-height: 1.55; color: var(--sp-muted); }
+.sp-work__text:lang(ar) { line-height: 1.75; }
+@media (prefers-reduced-motion: reduce) {
+  .sp-work:hover { transform: none; }
+}
 .sp-related {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));

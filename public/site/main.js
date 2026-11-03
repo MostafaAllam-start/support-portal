@@ -360,6 +360,134 @@
     }
   });
 
+  /* ------------------------------------------------------------------
+     Demo request: sent in the background so the page stays where it is,
+     with the outcome shown as a toast. The handler at the form's action
+     answers { "ok": true } (or { "ok": false } for invalid input) when the
+     request asks for JSON. Without this script the form posts normally; a
+     handler that then redirects back with ?request=sent|invalid still gets
+     its toast here.
+     ------------------------------------------------------------------ */
+  var arabic = root.lang === "ar";
+  // The portal's icons: a check in a circle, and an X in an octagon.
+  var ICON_OK = '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>';
+  var ICON_ERROR =
+    '<path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>';
+  var TOASTS = {
+    sent: {
+      icon: ICON_OK,
+      text: arabic
+        ? "شكراً لك، تم استلام طلبك وسيتواصل معك فريقنا قريباً."
+        : "Thank you. Your request has been received, and our team will contact you shortly.",
+    },
+    invalid: {
+      icon: ICON_ERROR,
+      text: arabic
+        ? "تعذّر إرسال الطلب. يرجى التحقق من الحقول المطلوبة والمحاولة مرة أخرى."
+        : "We couldn't send your request. Please check the required fields and try again.",
+    },
+    failed: {
+      icon: ICON_ERROR,
+      text: arabic
+        ? "تعذّر إرسال الطلب حالياً. يرجى المحاولة لاحقاً."
+        : "We couldn't send your request right now. Please try again later.",
+    },
+  };
+  var toaster = null;
+
+  // Shows one toast for 4 s (paused while the pointer is over it).
+  function showToast(outcome) {
+    var spec = TOASTS[outcome];
+    if (!toaster) {
+      toaster = doc.createElement("ol");
+      toaster.className = "toaster";
+      toaster.setAttribute("aria-label", arabic ? "الإشعارات" : "Notifications");
+      doc.body.appendChild(toaster);
+    }
+    var toast = doc.createElement("li");
+    toast.className = "toast";
+    toast.setAttribute("role", outcome === "sent" ? "status" : "alert");
+    toast.innerHTML =
+      '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + spec.icon + "</svg>";
+    var text = doc.createElement("span");
+    text.textContent = spec.text;
+    toast.appendChild(text);
+    toaster.appendChild(toast);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        toast.classList.add("is-shown");
+      });
+    });
+
+    var remaining = 4000;
+    var started = Date.now();
+    var timer = setTimeout(dismiss, remaining);
+    toast.addEventListener("mouseenter", function () {
+      clearTimeout(timer);
+      remaining -= Date.now() - started;
+    });
+    toast.addEventListener("mouseleave", function () {
+      started = Date.now();
+      timer = setTimeout(dismiss, Math.max(remaining, 1000));
+    });
+    function dismiss() {
+      toast.classList.remove("is-shown");
+      setTimeout(function () {
+        toast.remove();
+      }, motionOK() ? 400 : 0);
+    }
+  }
+
+  // Back from a redirect-style handler: show its outcome once, then drop the flag
+  // so a reload doesn't repeat it.
+  var params = new URLSearchParams(window.location.search);
+  var redirected = params.get("request");
+  if (redirected === "sent" || redirected === "invalid") {
+    params.delete("request");
+    var query = params.toString();
+    history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+    showToast(redirected);
+  }
+
+  var demoForm = doc.getElementById("demo-form");
+  if (demoForm && window.fetch && window.FormData) {
+    demoForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var submit = demoForm.querySelector('[type="submit"]');
+      if (submit) submit.disabled = true;
+      demoForm.setAttribute("aria-busy", "true");
+
+      fetch(demoForm.action, {
+        method: "POST",
+        body: new FormData(demoForm),
+        headers: { Accept: "application/json" },
+      })
+        .then(function (response) {
+          return response.json().then(
+            function (data) { return { data: data, url: response.url }; },
+            function () { return { data: null, url: response.url }; }
+          );
+        })
+        .then(function (result) {
+          // A handler that redirects instead of answering JSON still reports
+          // its outcome in the final URL.
+          var flag = /[?&]request=(sent|invalid)\b/.exec(result.url || "");
+          var outcome = result.data
+            ? (result.data.ok ? "sent" : "invalid")
+            : (flag ? flag[1] : "failed");
+          if (outcome === "sent") demoForm.reset();
+          showToast(outcome);
+        })
+        .catch(function () {
+          showToast("failed");
+        })
+        .then(function () {
+          if (submit) submit.disabled = false;
+          demoForm.removeAttribute("aria-busy");
+        });
+    });
+  }
+
   // Everything is wired up: the CSS fail-safe is no longer needed.
   root.classList.add("reveal-ready");
 })();
