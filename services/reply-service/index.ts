@@ -6,15 +6,14 @@ import type { Reply, ReplyEntityType } from "@/app/generated/prisma/client";
 
 // Author summary loaded with every reply, so the conversation UI can show who
 // wrote each message (image, name, position) and align it by author. The role is
-// derived (roles are per-project + the admin flag), so the inputs are loaded and
-// collapsed in app code (see toAuthor).
+// derived (account type + project roles), so the inputs are loaded and collapsed
+// in app code.
 const authorSelect = {
   id: true,
   name: true,
   image: true,
   jobTitle: true,
-  isAdmin: true,
-  isSystemSupport: true,
+  role: true,
   projectMemberships: { select: { role: { select: { name: true } } } },
   managedProjects: { select: { id: true } },
 } as const;
@@ -77,8 +76,7 @@ export class ReplyService extends Service {
         jobTitle: user.jobTitle,
         role: {
           name: effectiveRoleName({
-            isAdmin: user.isAdmin,
-            isSystemSupport: user.isSystemSupport,
+            role: user.role,
             managesProject: user.managedProjects.length > 0,
             membershipRoleNames: user.projectMemberships.map((m) => m.role.name),
           }),

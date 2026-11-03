@@ -343,7 +343,7 @@ export async function postTicketReplyAction(
   const ticket = await ticketService.getDetail(ticketId);
   if (!ticket) return { error: "Ticket not found" };
 
-  if (!(await canReplyToTicket(user, ticket))) {
+  if (!canReplyToTicket(user, ticket)) {
     return { error: "You can't reply to this ticket." };
   }
 
@@ -410,7 +410,7 @@ export async function postTicketReplyAction(
 
 // Edits and deletes are restricted to the reply's author or an admin.
 function canModifyReply(user: AuthUser, reply: { userId: number }): boolean {
-  return reply.userId === user.id || user.role.name === "admin";
+  return reply.userId === user.id || user.effectiveRole === "admin";
 }
 
 // Loads a ticket reply and authorizes the session user to modify it. Returns the

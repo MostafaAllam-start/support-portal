@@ -1,17 +1,25 @@
-// Roles are granted per project (see the UserProject join). The two global roles
-// live as flags on User: admin (`isAdmin`) and system support (`isSystemSupport`).
-// These helpers collapse a user's project memberships (+ global flags + the
-// projects they manage) into the single "effective role" name the dashboard
-// surfaces still reason about.
+import { UserRole } from "@/app/generated/prisma/enums";
 
-export enum UserRole {
-  Admin = "admin",
-  // Works the branding-site requests; sees only that part of the dashboard.
-  SystemSupport = "system-support",
-  User = "user",
+// The account type lives on User.role (the UserRole enum): admin, team_member
+// or client. Team members also hold per-project roles (the UserProject join),
+// may manage projects, and may be support (User.isSupport, the Requests page);
+// what they see on the dashboard follows from those. These helpers collapse a user's account type and project
+// roles into the single "effective role" name the dashboard surfaces reason about.
+
+export { UserRole };
+
+export const USER_ROLES = [
+  UserRole.admin,
+  UserRole.team_member,
+  UserRole.client,
+] as const;
+
+// Whether a value is one of the account types (for form input).
+export function isUserRole(value: unknown): value is UserRole {
+  return (USER_ROLES as readonly unknown[]).includes(value);
 }
 
-// The role names that can be granted to a user within a project.
+// The role names that can be granted to a team member within a project.
 export const PROJECT_ROLES = [
   "manager",
   "reviewer",
@@ -26,36 +34,44 @@ export enum ProjectRole {
   SoftwareEngineer = "software-engineer",
 }
 
-// Inputs needed to derive a user's effective role, gathered from the new model.
+// What a user is treated as on the dashboard: their account type, or for a team
+// member their most privileged project role ("team-member" when they hold none).
+export type EffectiveRole =
+  | "admin"
+  | "client"
+  | "team-member"
+  | `${ProjectRole}`;
+
+// Inputs needed to derive a user's effective role.
 export type RoleDerivation = {
-  isAdmin: boolean;
-  isSystemSupport: boolean;
+  role: UserRole;
   // True when the user manages at least one project (Project.managerId).
   managesProject: boolean;
   // The role names from the user's project memberships (UserProject).
   membershipRoleNames: readonly string[];
 };
 
-// Collapses the inputs to one role name, most-privileged first:
-// admin > system-support > manager > reviewer > sap-consultant >
-// software-engineer > user. System support outranks the project roles because it
-// restricts the dashboard to the requests page. "user" (a plain customer) is the
-// fallback when nothing privileged applies.
-export function effectiveRoleName(
-  input: RoleDerivation,
-): ProjectRole | UserRole {
-  if (input.isAdmin) return UserRole.Admin;
-  if (input.isSystemSupport) return UserRole.SystemSupport;
+// Collapses the inputs to one role name. Admin and client map 1:1. A
+// team member takes their most privileged project role: manager > reviewer >
+// sap-consultant > software-engineer, else "team-member".
+export function effectiveRoleName(input: RoleDerivation): EffectiveRole {
+  switch (input.role) {
+    case UserRole.admin:
+      return "admin";
+    case UserRole.client:
+      return "client";
+  }
   if (input.managesProject || input.membershipRoleNames.includes("manager")) {
     return ProjectRole.Manager;
   }
-  if (input.membershipRoleNames.includes("reviewer"))
+  if (input.membershipRoleNames.includes("reviewer")) {
     return ProjectRole.Reviewer;
+  }
   if (input.membershipRoleNames.includes("sap-consultant")) {
     return ProjectRole.SapConsultant;
   }
   if (input.membershipRoleNames.includes("software-engineer")) {
     return ProjectRole.SoftwareEngineer;
   }
-  return UserRole.User;
+  return "team-member";
 }

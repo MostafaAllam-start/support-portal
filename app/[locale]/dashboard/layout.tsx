@@ -6,7 +6,12 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { isSystemSupport, requireDashboardAccess } from "@/lib/auth/guards";
+import { PendingSkeleton } from "@/components/navigation-skeleton";
+import {
+  canWorkRequests,
+  isSupport,
+  requireDashboardAccess,
+} from "@/lib/auth/guards";
 import { notificationService } from "@/services";
 import { DashboardSidebar } from "./_components/dashboard-sidebar";
 import {
@@ -49,16 +54,18 @@ export default async function DashboardLayout({
       isRead: item.isRead,
     }));
 
-  const notificationsHref = user.isAdmin
+  const notificationsHref = user.effectiveRole === "admin"
     ? "/dashboard/issues"
-    : isSystemSupport(user)
+    : isSupport(user) && user.effectiveRole === "team-member"
       ? "/dashboard/requests"
       : "/dashboard/tickets";
 
   return (
     <SidebarProvider>
       <DashboardSidebar
-        role={user.role.name}
+        role={user.effectiveRole}
+        // Support adds the Requests page to a team member's sections.
+        showsRequests={canWorkRequests(user)}
         side={side}
         user={{ name: user.name, username: user.username, image: user.image }}
       />
@@ -75,7 +82,9 @@ export default async function DashboardLayout({
             <LocaleSwitcher />
           </div>
         </header>
-        <div className="flex-1 p-4 md:p-6">{children}</div>
+        <div className="flex-1 p-4 md:p-6">
+          <PendingSkeleton area="dashboard">{children}</PendingSkeleton>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

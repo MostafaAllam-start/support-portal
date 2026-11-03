@@ -232,7 +232,7 @@ export async function deleteSuggestionReplyAction(
     return { error: "Reply not found." };
   }
 
-  if (reply.userId !== me.id && me.role.name !== "admin") {
+  if (reply.userId !== me.id && me.effectiveRole !== "admin") {
     return { error: "You can't delete this reply." };
   }
 

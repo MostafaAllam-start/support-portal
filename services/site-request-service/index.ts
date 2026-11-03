@@ -1,13 +1,19 @@
 import { Service } from "../service";
 import {
+  createContactRequestSchema,
   createSiteRequestSchema,
   manualSiteRequestStatusSchema,
 } from "./schemas";
-import type { CreateSiteRequestInput, ManualSiteRequestStatus } from "./types";
+import type {
+  CreateContactRequestInput,
+  CreateSiteRequestInput,
+  ManualSiteRequestStatus,
+} from "./types";
 import type { SiteRequest } from "@/app/generated/prisma/client";
 
 const siteRequestInclude = {
   adminNotifiedBy: { select: { id: true, name: true } },
+  scope: { select: { name: true } },
 } as const;
 
 export class SiteRequestService extends Service {
@@ -15,6 +21,12 @@ export class SiteRequestService extends Service {
   async create(input: CreateSiteRequestInput): Promise<SiteRequest> {
     const data = createSiteRequestSchema.parse(input);
     return this.prisma.siteRequest.create({ data });
+  }
+
+  // Stores a message from the landing page's contact form.
+  async createContact(input: CreateContactRequestInput): Promise<SiteRequest> {
+    const data = createContactRequestSchema.parse(input);
+    return this.prisma.siteRequest.create({ data: { ...data, source: "contact" } });
   }
 
   // Every request, newest first, for the system-support dashboard. The id breaks

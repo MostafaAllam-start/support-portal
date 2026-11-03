@@ -1,6 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireDashboardUser, ticketScopeForUser } from "@/lib/auth/guards";
-import { UserRole } from "@/lib/auth/roles";
 import { ticketService } from "@/services";
 import { KpiCards } from "../_components/kpi-cards";
 import { KpiProjectBreakdown } from "../_components/kpi-project-breakdown";
@@ -18,7 +17,7 @@ export default async function KpisPage({
   const t = await getTranslations("Dashboard");
 
   const scope = ticketScopeForUser(user);
-  const isGlobal = user.userRole === UserRole.Admin;
+  const isGlobal = user.effectiveRole === "admin";
   const [stats, trend, projectGroups] = await Promise.all([
     ticketService.stats(scope),
     ticketService.createdTrend(scope, 30),

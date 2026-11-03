@@ -1,11 +1,12 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { requireRole } from "@/lib/auth/guards";
+import { requireRequestsAccess } from "@/lib/auth/guards";
 import { UserRole } from "@/lib/auth/roles";
 import { siteRequestService } from "@/services";
 import { RequestsTable } from "./_components/requests-table";
 
-// Every "Request a demo" submission from the branding site, for system support
-// (and admins) to follow up. `?id=` (from a notification) opens that request.
+// Every "Request a demo" submission from the branding site and message from the
+// landing page's contact form, for support (and managers and admins) to follow up.
+// `?id=` (from a notification) opens that request.
 export default async function RequestsPage({
   params,
   searchParams,
@@ -15,7 +16,7 @@ export default async function RequestsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const user = await requireRole(UserRole.SystemSupport, UserRole.Admin);
+  const user = await requireRequestsAccess();
   const t = await getTranslations("Dashboard.requests");
 
   const [requests, { id }] = await Promise.all([
@@ -34,13 +35,16 @@ export default async function RequestsPage({
 
       <RequestsTable
         initialOpenId={Number.isInteger(openId) && openId > 0 ? openId : null}
-        canNotifyAdmin={user.userRole !== UserRole.Admin}
+        canNotifyAdmin={user.role !== UserRole.admin}
         requests={requests.map((request) => ({
           id: request.id,
+          source: request.source,
+          scope: request.scope?.name ?? null,
           name: request.name,
           email: request.email,
           organization: request.organization,
           modules: request.modules,
+          subject: request.subject,
           message: request.message,
           status: request.status,
           createdAt: request.createdAt.toISOString(),

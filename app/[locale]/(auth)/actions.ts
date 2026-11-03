@@ -4,11 +4,8 @@ import type { z } from "zod";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { userService, loginSchema } from "@/services";
-import { canViewDashboard } from "@/lib/auth/guards";
-import {
-  getSelectedCompanyIdFromCookie,
-  setSelectedCompanyCookie,
-} from "@/lib/company-selection";
+import { brandScope, hasDashboardAccess } from "@/lib/auth/guards";
+import { chooseScope } from "@/lib/choose-scope";
 
 type AuthState = {
   error?: string;
@@ -54,21 +51,16 @@ export async function loginAction(
   // locale-aware redirect keeps the active /en or /ar prefix.
   const me = await userService.currentUser();
   let href = "/";
-  if (me && canViewDashboard(me)) {
+  if (me && hasDashboardAccess(me)) {
     href = "/dashboard";
   } else if (me) {
-    // Company selection happened before login. Keep account and cookie in sync:
-    // adopt the cookie choice if the account has none, otherwise mirror the
-    // account's company into the cookie so the brand is consistent.
-    if (me.companyId == null) {
-      const cookieId = await getSelectedCompanyIdFromCookie();
-      if (cookieId != null) {
-        await userService.update(me.id, { companyId: cookieId });
-      } else {
-        href = "/company-select";
-      }
+    // Scope selection happened before login. Keep account and cookie in sync: the
+    // choice stands if the scope is theirs, otherwise the scope of their company.
+    const scope = await brandScope();
+    if (scope) {
+      await chooseScope(scope.id);
     } else {
-      await setSelectedCompanyCookie(me.companyId);
+      href = "/company-select";
     }
   }
   return redirect({ href, locale: await getLocale() });

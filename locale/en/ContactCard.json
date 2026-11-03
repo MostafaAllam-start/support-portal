@@ -1,7 +1,7 @@
 {
   "welcome": {
-    "platformName": "ECM Support",
-    "tagline": "The unified workspace for ECM Business Suite support.",
+    "platformName": "ECM+ Support",
+    "tagline": "The unified workspace for ECM+ Business Suite support.",
     "intro": "Welcome — view and save this team member's contact details.",
     "getStarted": "View contact card"
   },
@@ -20,6 +20,6 @@
   },
   "footer": {
     "poweredBy": "Powered by",
-    "team": "the ECM Support team"
+    "team": "the ECM+ Support team"
   }
 }

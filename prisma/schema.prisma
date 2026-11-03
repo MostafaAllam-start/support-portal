@@ -42,7 +42,24 @@ enum NotificationEntityType {
   site_request
 }
 
-// Where system support is with a branding-site request.
+// The account type. admin: everything. team_member: the staff dashboard, scoped
+// by their company scope and project roles (and the Requests page when they are
+// support, see User.isSupport). client: the customer pages (their own tickets,
+// complaints and suggestions), no dashboard.
+enum UserRole {
+  admin
+  team_member
+  client
+}
+
+// Which form a request came from: the branding site's "Request a demo", or the
+// landing page's contact form.
+enum SiteRequestSource {
+  demo
+  contact
+}
+
+// Where system support is with a request.
 enum SiteRequestStatus {
   new
   contacted
@@ -54,8 +71,8 @@ enum SiteRequestStatus {
 model Role {
   id           Int           @id @default(autoincrement())
   name         String        @unique
-  // Roles are assigned per-project (see UserProject). The global admin is a flag
-  // on User (`isAdmin`), not a row here.
+  // Project roles, granted per project to team members (see UserProject). The
+  // account type (admin, support, team member, client) is User.role.
   userProjects UserProject[]
 
   @@map("roles")
@@ -68,16 +85,12 @@ model User {
   email              String    @unique
   password           String
   image              String?
-  // Global admin flag. Every other role is granted per-project (see UserProject);
-  // a non-admin with no project membership is a plain customer ("user").
-  isAdmin            Boolean   @default(false) @map("is_admin")
-  // Whether this user may open the staff dashboard. Admins always can; for
-  // everyone else it is an explicit, admin-granted toggle (independent of any
-  // project membership).
-  canAccessDashboard Boolean   @default(false) @map("can_access_dashboard")
-  // Global system-support flag: the user works the branding-site requests and
-  // sees only that part of the dashboard (no tickets or project roles).
-  isSystemSupport    Boolean   @default(false) @map("is_system_support")
+  // The account type. Only team members hold project roles (UserProject) or
+  // manage projects; what they see on the dashboard follows from those.
+  role               UserRole  @default(client)
+  // A team member who also works the branding-site requests: their dashboard
+  // gets the Requests page. Only meaningful for team members.
+  isSupport          Boolean   @default(false) @map("is_support")
   jobTitle           String?   @map("job_title")
   website            String?
   whatsapp           String?
@@ -86,15 +99,24 @@ model User {
   // otherwise that page 404s. Opt-in (defaults to false).
   hasContactInfoCard Boolean   @default(false) @map("has_contact_info_card")
   // When true, this user is featured in their company's public landing-page
-  // "Our Team" section. Opt-in (defaults to false).
-  isTeamMember       Boolean   @default(false) @map("is_team_member")
+  // "Our Team" section. Opt-in (defaults to false). Unrelated to the team_member
+  // account type.
+  isFeatured         Boolean   @default(false) @map("is_featured")
   isDisabled         Boolean   @default(false) @map("is_disabled")
   deletedAt          DateTime? @map("deleted_at")
 
-  // The company this user belongs to (ECM or CTC), set by the admin who created
-  // the account. Nullable until a plain "user" makes the choice on /company-select.
+  // The user's main company (ECM or CTC): the brand they see and, for a client,
+  // the company their new tickets go to. Always one of their scopes' companies;
+  // a client with several can switch between them.
   companyId Int?     @map("company_id")
   company   Company? @relation(fields: [companyId], references: [id])
+
+  // The scopes (CTC, ECM, …) a team member or client works with: one or more
+  // (implicit join table _ScopeToUser). A team member's scopes decide whose
+  // tickets a reviewer or consultant sees; a client's list the companies they
+  // belong to, and a live client must hold one (a database trigger checks it,
+  // see prisma/seeding/scopes.ts). Admins have none.
+  scopes Scope[]
 
   // Tickets this user reported, and the assignment rows linking this user
   // (a software-engineer) to the tickets assigned to them.
@@ -127,18 +149,24 @@ model User {
   notifiedSiteRequests SiteRequest[] @relation("NotifiedSiteRequests")
 
   @@index([companyId])
+  @@index([role])
   @@map("users")
 }
 
-// A "Request a demo" submission from the public branding site (/site), worked by
-// system support from the dashboard.
+// A request from a visitor, worked by system support from the dashboard: a "Request
+// a demo" submission from the public branding site (/site), or a message from the
+// landing page's contact form.
 model SiteRequest {
   id           Int               @id @default(autoincrement())
+  source       SiteRequestSource @default(demo)
   name         String
   email        String
-  organization String
-  // Modules of interest picked on the form (documents, correspondence, …).
+  // Demo requests only.
+  organization String?
+  // Modules of interest picked on the demo form (documents, correspondence, …).
   modules      String[]
+  // Contact form only.
+  subject      String?
   message      String?
   // Language of the page the request was sent from (en / ar).
   locale       String            @default("en")
@@ -152,7 +180,12 @@ model SiteRequest {
   adminNotifiedById Int?      @map("admin_notified_by_id")
   adminNotifiedBy   User?     @relation("NotifiedSiteRequests", fields: [adminNotifiedById], references: [id], onDelete: SetNull)
 
+  // The scope the visitor was browsing as (CTC, ECM, …), when they had picked one.
+  scopeId Int?   @map("scope_id")
+  scope   Scope? @relation(fields: [scopeId], references: [id], onDelete: SetNull)
+
   @@index([status, createdAt])
+  @@index([scopeId])
   @@map("site_requests")
 }
 
@@ -328,18 +361,6 @@ model Complaint {
   @@map("complaints")
 }
 
-model ContactMessage {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String
-  subject   String?
-  message   String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([createdAt])
-  @@map("contact_messages")
-}
-
 model Partner {
   id      Int    @id @default(autoincrement())
   name    String
@@ -387,8 +408,28 @@ model Company {
   tickets     Ticket[]
   partners    Partner[]
   suggestions Suggestion[]
+  scopes      Scope[]
 
   @@map("companies")
+}
+
+// A named set of companies (CTC, ECM, …) given to team members and clients; a
+// user can hold one or more. Admins edit them on the Scopes page.
+model Scope {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  // Shown wherever a visitor picks or browses under this scope.
+  logo String @default("")
+
+  // The companies in this scope and the users holding it (both many-to-many,
+  // implicit join tables).
+  companies Company[]
+  users     User[]
+
+  // Requests from visitors browsing under this scope.
+  siteRequests SiteRequest[]
+
+  @@map("scopes")
 }
 
 model Project {

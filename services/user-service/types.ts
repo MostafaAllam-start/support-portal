@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { User } from "@/app/generated/prisma/client";
-import type { UserRole } from "@/lib/auth/roles";
+import type { EffectiveRole } from "@/lib/auth/roles";
 import type { loginSchema, createUserSchema, updateUserSchema } from "./schemas";
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -19,14 +19,18 @@ export type UserMembership = {
   roleName: string;
 };
 
-// A safe user enriched with everything role/visibility decisions need: the global
-// admin flag (`isAdmin`, already on User), the per-project memberships, the ids of
-// the projects the user manages, and a single derived `role` — the effective role
-// collapsed from those inputs (see effectiveRoleName) — kept for the surfaces that
-// still reason about one role name.
+// One project the user manages (Project.managerId), with its company.
+export type ManagedProject = { id: number; companyId: number };
+
+// A safe user enriched with everything role/visibility decisions need: the account
+// type (`role`, already on User), the per-project memberships, the projects the
+// user manages, and the single `effectiveRole` collapsed from those (see
+// effectiveRoleName) for the surfaces that reason about one role name.
 export type AuthUser = SafeUser & {
-  userRole: UserRole;
-  role: { name: string };
+  effectiveRole: EffectiveRole;
   memberships: UserMembership[];
-  managedProjectIds: number[];
+  managedProjects: ManagedProject[];
+  // The ids of the user's scopes, and of the companies in them (empty without one).
+  scopeIds: number[];
+  scopeCompanyIds: number[];
 };

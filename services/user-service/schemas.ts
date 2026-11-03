@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { USER_ROLES } from "@/lib/auth/roles";
 
 export const loginSchema = z.object({
   // Accepts either the username or the email.
@@ -28,16 +29,16 @@ export const updateUserSchema = z.object({
   website: z.string().nullable().optional(),
   whatsapp: z.string().nullable().optional(),
   linkedin: z.string().nullable().optional(),
-  // The global roles (every other role is per-project): admin, and system
-  // support, which works the branding-site requests.
-  isAdmin: z.boolean().optional(),
-  isSystemSupport: z.boolean().optional(),
-  // Whether the user may open the staff dashboard.
-  canAccessDashboard: z.boolean().optional(),
-  // The company the user belongs to (ECM/CTC).
+  // The account type: admin, team member or client.
+  role: z.enum(USER_ROLES).optional(),
+  // A team member who also works the branding-site requests.
+  isSupport: z.boolean().optional(),
+  // The user's main company (ECM/CTC), and the scopes (companies) they work with;
+  // scopeIds replaces them all.
   companyId: z.number().int().positive().nullable().optional(),
+  scopeIds: z.array(z.number().int().positive()).optional(),
   // Whether the user is featured on their company's public landing-page team.
-  isTeamMember: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   // Whether the user has a public contact card at /contact-info/[id].
   hasContactInfoCard: z.boolean().optional(),
 });

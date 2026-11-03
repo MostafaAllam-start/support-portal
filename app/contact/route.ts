@@ -1,4 +1,5 @@
 import { createSiteRequestSchema, siteRequestService } from "@/services";
+import { brandScopeId } from "@/lib/auth/guards";
 import { eventBus } from "@/events/eventBus";
 import { DomainEventType } from "@/events/eventTypes";
 
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     modules: form.getAll("modules"),
     message: form.get("message") ?? "",
     locale,
+    scopeId: await brandScopeId(),
   });
   if (!parsed.success) return back(locale, "invalid");
 

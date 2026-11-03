@@ -107,7 +107,7 @@ export default async function ProjectDetailPage({
                 <span>
                   {member.user.name}
                   <span className="ms-2 text-xs text-muted-foreground">
-                    @{member.user.username}
+                    {member.user.username}
                   </span>
                 </span>
                 <Badge variant="outline">{member.role.name}</Badge>

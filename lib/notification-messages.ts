@@ -11,11 +11,12 @@ type TicketNotificationMessages = {
   complaintSubmitted: (ticketId: number) => { title: string; details: string };
   suggestionCreated: (title: string) => { title: string; details: string };
   siteRequestSubmitted: (name: string, organization: string) => { title: string; details: string };
+  contactRequestSubmitted: (name: string) => { title: string; details: string };
   accountRequested: (input: {
     actor: string;
     name: string;
     email: string;
-    organization: string;
+    organization: string | null;
   }) => { title: string; details: string };
 };
 
@@ -63,9 +64,19 @@ export async function ticketNotificationMessages(): Promise<TicketNotificationMe
       title: t("siteRequestSubmitted.title", { organization }),
       details: t("siteRequestSubmitted.details", { name, organization }),
     }),
-    accountRequested: (input) => ({
-      title: t("accountRequested.title", { organization: input.organization }),
-      details: t("accountRequested.details", input),
+    contactRequestSubmitted: (name) => ({
+      title: t("contactRequestSubmitted.title", { name }),
+      details: t("contactRequestSubmitted.details", { name }),
     }),
+    accountRequested: ({ organization, ...input }) =>
+      organization
+        ? {
+            title: t("accountRequested.title", { organization }),
+            details: t("accountRequested.details", { ...input, organization }),
+          }
+        : {
+            title: t("accountRequested.titleNoOrganization", { name: input.name }),
+            details: t("accountRequested.detailsNoOrganization", input),
+          },
   };
 }

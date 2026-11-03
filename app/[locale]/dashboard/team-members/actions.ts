@@ -32,7 +32,7 @@ export async function addTeamMemberAction(
   if (!userId) return { error: "Invalid user" };
 
   try {
-    await userService.update(userId, { isTeamMember: true });
+    await userService.update(userId, { isFeatured: true });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
@@ -52,7 +52,7 @@ export async function removeTeamMemberAction(
   if (!userId) return { error: "Invalid user" };
 
   try {
-    await userService.update(userId, { isTeamMember: false });
+    await userService.update(userId, { isFeatured: false });
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Failed to remove",

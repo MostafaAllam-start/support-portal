@@ -11,11 +11,12 @@ export enum DomainEventType {
   SITE_REQUEST_ADMIN_NOTIFIED = "SITE_REQUEST_ADMIN_NOTIFIED",
 }
 
-// A visitor sent the branding site's demo form.
+// A visitor sent the branding site's demo form, or the landing page's contact
+// form (which has no organization).
 export interface SiteRequestSubmittedPayload {
   requestId: number;
   name: string;
-  organization: string;
+  organization: string | null;
 }
 
 // System support asked the admins to create a support account for a request's
@@ -25,7 +26,7 @@ export interface SiteRequestAdminNotifiedPayload {
   actorId: number;
   name: string;
   email: string;
-  organization: string;
+  organization: string | null;
 }
 
 export interface TicketCreatedPayload {

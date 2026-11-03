@@ -2,8 +2,10 @@ import bcrypt from "bcryptjs";
 import type {
   Company,
   PrismaClient,
+  Scope,
   User,
 } from "../../app/generated/prisma/client";
+import type { UserRole } from "../../app/generated/prisma/enums";
 
 const BCRYPT_ROUNDS = 12;
 const PASSWORD = "Password@123";
@@ -19,14 +21,17 @@ type SampleSpec = {
   // Whether this user has a public /contact-info card (defaults to false).
   contactCard?: boolean;
   // Whether this user is featured on their company's landing-page team.
-  teamMember?: boolean;
-  // Whether this user can open the staff dashboard (staff = true; the plain
-  // customer accounts default to false).
-  canAccessDashboard?: boolean;
-  // Whether this user is system support (works the branding-site requests).
-  systemSupport?: boolean;
-  // The company this user belongs to (matches a key in the companies map).
-  company?: "ECM" | "CTC";
+  featured?: boolean;
+  // The account type. Team members get their project roles from the project
+  // seeder.
+  role: UserRole;
+  // A team member who works the branding-site requests.
+  support?: boolean;
+  // The user's main company (matches a key in the companies map).
+  company?: "ECM+" | "CTC";
+  // The companies they work with (default scope names); team members and
+  // clients only.
+  scopes?: ("CTC" | "ECM+")[];
 };
 
 const SAMPLES: SampleSpec[] = [
@@ -39,9 +44,11 @@ const SAMPLES: SampleSpec[] = [
     whatsapp: "+962790000011",
     linkedin: "https://www.linkedin.com/in/evan-engineer",
     contactCard: true,
-    teamMember: true,
-    canAccessDashboard: true,
+    featured: true,
+    role: "team_member",
     company: "CTC",
+    // Engineers work ECM and SAP tickets alike.
+    scopes: ["CTC", "ECM+"],
   },
   {
     name: "Erin Engineer",
@@ -50,8 +57,9 @@ const SAMPLES: SampleSpec[] = [
     jobTitle: "Software Engineer",
     website: "https://erinengineer.dev",
     whatsapp: "+962790000012",
-    canAccessDashboard: true,
+    role: "team_member",
     company: "CTC",
+    scopes: ["CTC"],
   },
   {
     name: "Rana Reviewer",
@@ -62,9 +70,10 @@ const SAMPLES: SampleSpec[] = [
     whatsapp: "+962790000021",
     linkedin: "https://www.linkedin.com/in/rana-reviewer",
     contactCard: true,
-    teamMember: true,
-    canAccessDashboard: true,
+    featured: true,
+    role: "team_member",
     company: "CTC",
+    scopes: ["CTC"],
   },
   {
     name: "Cara Consultant",
@@ -72,9 +81,10 @@ const SAMPLES: SampleSpec[] = [
     email: "consultant1@example.com",
     jobTitle: "SAP Consultant",
     whatsapp: "+962790000041",
-    teamMember: true,
-    canAccessDashboard: true,
+    featured: true,
+    role: "team_member",
     company: "CTC",
+    scopes: ["CTC"],
   },
   {
     name: "Mark Manager",
@@ -83,17 +93,29 @@ const SAMPLES: SampleSpec[] = [
     jobTitle: "Project Manager",
     whatsapp: "+962790000051",
     contactCard: true,
-    teamMember: true,
-    canAccessDashboard: true,
+    featured: true,
+    role: "team_member",
     company: "CTC",
+    scopes: ["CTC"],
+  },
+  {
+    name: "Rami Reviewer",
+    username: "reviewer2",
+    email: "reviewer2@example.com",
+    jobTitle: "QA Reviewer",
+    role: "team_member",
+    company: "ECM+",
+    scopes: ["ECM+"],
   },
   {
     name: "Sara Support",
     username: "support1",
     email: "support1@example.com",
     jobTitle: "System Support",
-    systemSupport: true,
-    company: "ECM",
+    role: "team_member",
+    support: true,
+    company: "ECM+",
+    scopes: ["ECM+"],
   },
   {
     name: "Uma User",
@@ -101,28 +123,32 @@ const SAMPLES: SampleSpec[] = [
     email: "user1@example.com",
     whatsapp: "+962790000031",
     linkedin: "https://www.linkedin.com/in/uma-user",
+    role: "client",
     company: "CTC",
+    scopes: ["CTC"],
   },
   {
     name: "Sam Sample",
     username: "user2",
     email: "user2@example.com",
     website: "https://samsample.example.com",
-    teamMember: true,
-    company: "ECM",
+    role: "client",
+    company: "ECM+",
+    // A client of both companies: switches between them in the header.
+    scopes: ["CTC", "ECM+"],
   },
 ];
 
 // Seeds demo accounts so the dashboard has data. All share the same dev password.
-// Roles are no longer global: the project seeder grants them per-project
+// Staff are team members whose project roles the project seeder grants
 // (engineers/reviewers/consultants become project members; managers are set as
-// the project's manager), and user1/user2 stay plain customers with no
-// membership. Idempotent on `username`. `companies` maps company name (lowercased)
+// the project's manager); user1/user2 are clients with no membership. Idempotent on `username`. `companies` maps company name (lowercased)
 // -> Company, used to set each user's company so seeded accounts skip the
 // company-select step.
 export async function seedSampleUsers(
   prisma: PrismaClient,
   companies: Record<string, Company>,
+  scopes: Record<string, Scope>,
 ): Promise<Record<string, User>> {
   const passwordHash = await bcrypt.hash(PASSWORD, BCRYPT_ROUNDS);
   const created: Record<string, User> = {};
@@ -131,6 +157,9 @@ export async function seedSampleUsers(
     const companyId = spec.company
       ? (companies[spec.company.toLowerCase()]?.id ?? null)
       : null;
+    const scopeIds = (spec.scopes ?? [])
+      .map((name) => scopes[name.toLowerCase()]?.id)
+      .filter((id): id is number => id != null);
     created[spec.username] = await prisma.user.upsert({
       where: { username: spec.username },
       // Backfill the contact fields on existing rows too, so re-seeding an older
@@ -140,10 +169,11 @@ export async function seedSampleUsers(
         whatsapp: spec.whatsapp ?? null,
         linkedin: spec.linkedin ?? null,
         hasContactInfoCard: spec.contactCard ?? false,
-        isTeamMember: spec.teamMember ?? false,
-        canAccessDashboard: spec.canAccessDashboard ?? false,
-        isSystemSupport: spec.systemSupport ?? false,
+        isFeatured: spec.featured ?? false,
+        role: spec.role,
+        isSupport: spec.support ?? false,
         companyId,
+        scopes: { set: scopeIds.map((id) => ({ id })) },
       },
       create: {
         name: spec.name,
@@ -155,10 +185,11 @@ export async function seedSampleUsers(
         whatsapp: spec.whatsapp,
         linkedin: spec.linkedin,
         hasContactInfoCard: spec.contactCard ?? false,
-        isTeamMember: spec.teamMember ?? false,
-        canAccessDashboard: spec.canAccessDashboard ?? false,
-        isSystemSupport: spec.systemSupport ?? false,
+        isFeatured: spec.featured ?? false,
+        role: spec.role,
+        isSupport: spec.support ?? false,
         companyId,
+        scopes: { connect: scopeIds.map((id) => ({ id })) },
       },
     });
   }

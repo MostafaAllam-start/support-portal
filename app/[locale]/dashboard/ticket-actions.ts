@@ -81,13 +81,13 @@ async function requireTicketForAction(
 
   const allowed =
     mode === "manage"
-      ? canManageTickets(user.role.name)
+      ? canManageTickets(user.effectiveRole)
       : mode === "assign"
-        ? canAssignTickets(user.role.name)
-        : canChangeTicketStatus(user.role.name);
+        ? canAssignTickets(user.effectiveRole)
+        : canChangeTicketStatus(user.effectiveRole);
   if (!allowed) throw new Error("Forbidden");
 
-  if (!(await canAccessDashboardTicket(user, ticket))) {
+  if (!canAccessDashboardTicket(user, ticket)) {
     throw new Error("Forbidden");
   }
 
@@ -357,12 +357,12 @@ export async function createReportAction(
   const ticket = await ticketService.getDetail(ticketId);
   if (!ticket) return { error: "Ticket not found" };
 
-  if (!(await canAccessDashboardTicket(user, ticket))) {
+  if (!canAccessDashboardTicket(user, ticket)) {
     return { error: "Ticket not found" };
   }
 
   // Authorize: an assigned engineer or an assigned consultant on this ticket.
-  const role = user.role.name;
+  const role = user.effectiveRole;
   const isAssigned =
     (role === "software-engineer" || role === "sap-consultant") &&
     ticket.assignees.some((assignee) => assignee.assignee.id === user.id);

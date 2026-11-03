@@ -111,7 +111,8 @@
       "sap-consultant": "استشاري SAP",
       "manager": "مدير المشروع",
       "admin": "مسؤول",
-      "user": "المُبلِغ"
+      "client": "المُبلِغ",
+      "team-member": "عضو فريق"
     },
     "deleteConfirm": {
       "title": "حذف الرسالة",

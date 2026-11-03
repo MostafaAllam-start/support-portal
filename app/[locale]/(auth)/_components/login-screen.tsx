@@ -24,7 +24,15 @@ import { loginAction } from "../actions";
 
 // Sign-in is the only public auth surface: accounts are created by an admin from
 // the dashboard, and the credentials are emailed to the new user.
-export function LoginScreen({ brand = "ctc" }: { brand?: BrandKey }) {
+export function LoginScreen({
+  brand = "ctc",
+  logo,
+  logoAlt,
+}: {
+  brand?: BrandKey;
+  logo?: string | null;
+  logoAlt?: string;
+}) {
   const t = useTranslations("Auth");
   const tBrand = useTranslations("Brand");
 
@@ -40,6 +48,8 @@ export function LoginScreen({ brand = "ctc" }: { brand?: BrandKey }) {
           className="relative self-center"
           imageClassName="h-16"
           brand={brand}
+          src={logo}
+          alt={logoAlt}
         />
 
         <div className="relative space-y-6">
@@ -80,7 +90,7 @@ export function LoginScreen({ brand = "ctc" }: { brand?: BrandKey }) {
       <main className="flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center justify-between gap-3">
-            <Logo className="lg:hidden" brand={brand} />
+            <Logo className="lg:hidden" brand={brand} src={logo} alt={logoAlt} />
             <div className="flex items-center gap-2 ms-auto">
               <ThemeToggle />
               <LocaleSwitcher />

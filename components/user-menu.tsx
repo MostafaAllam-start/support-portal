@@ -48,7 +48,7 @@ export function UserMenu({
         <DropdownMenuLabel>
           <span className="block truncate">{name}</span>
           <span className="block truncate text-xs font-normal text-muted-foreground">
-            @{username}
+            {username}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

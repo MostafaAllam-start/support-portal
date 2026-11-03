@@ -15,7 +15,7 @@ export async function LandingTeam({
   // The users featured as team members for the company being branded. No company
   // resolved (shouldn't happen — the landing is gated) means no members.
   const members = companyId
-    ? await userService.teamMembersForCompany(companyId)
+    ? await userService.featuredForCompany(companyId)
     : [];
 
   // For each member, the always-shown display info and — only when the user opted

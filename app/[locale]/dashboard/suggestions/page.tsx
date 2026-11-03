@@ -1,5 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { requireRole } from "@/lib/auth/guards";
+import {
+  managedCompanyIds,
+  managedProjectIds,
+  requireRole,
+} from "@/lib/auth/guards";
 import { ProjectRole, UserRole } from "@/lib/auth/roles";
 import { suggestionService } from "@/services";
 import {
@@ -20,17 +24,23 @@ export default async function SuggestionsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const user = await requireRole(UserRole.Admin, ProjectRole.Manager);
+  const user = await requireRole(UserRole.admin, ProjectRole.Manager);
   const t = await getTranslations("Dashboard");
 
-  const projectIds = [...new Set([
-    ...user.managedProjectIds,
-    ...user.memberships.map((membership) => membership.projectId),
-  ])];
+  // A manager sees the suggestions on their projects, plus the company-wide ones
+  // (no project) of the companies those projects belong to.
   const suggestions =
-    user.userRole === UserRole.Admin
+    user.effectiveRole === "admin"
       ? await suggestionService.list()
-      : await suggestionService.listForProjects(projectIds);
+      : await suggestionService.listForManager({
+          projectIds: [
+            ...new Set([
+              ...managedProjectIds(user),
+              ...user.memberships.map((membership) => membership.projectId),
+            ]),
+          ],
+          companyIds: managedCompanyIds(user),
+        });
 
   return (
     <div className="space-y-6">

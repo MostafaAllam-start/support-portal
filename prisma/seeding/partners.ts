@@ -9,7 +9,7 @@ const PARTNERS = [
     name: "Northwind",
     logo: "https://placehold.co/240x120?text=Northwind",
     details: "Document management integrations for the enterprise.",
-    companyKeys: ["ecm", "ctc"],
+    companyKeys: ["ecm+", "ctc"],
   },
   {
     name: "Acme Corp",
@@ -21,7 +21,7 @@ const PARTNERS = [
     name: "Globex",
     logo: "https://placehold.co/240x120?text=Globex",
     details: "Secure cloud storage and content delivery.",
-    companyKeys: ["ecm"],
+    companyKeys: ["ecm+"],
   },
   {
     name: "Initech",
@@ -33,7 +33,7 @@ const PARTNERS = [
     name: "Umbrella",
     logo: "https://placehold.co/240x120?text=Umbrella",
     details: "Identity and single sign-on services.",
-    companyKeys: ["ecm", "ctc"],
+    companyKeys: ["ecm+", "ctc"],
   },
   {
     name: "Soylent",

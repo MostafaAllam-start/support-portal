@@ -25,10 +25,23 @@ export class SuggestionService extends Service {
     });
   }
 
-  listForProjects(projectIds: number[]) {
-    if (projectIds.length === 0) return [];
+  // A manager's view: the suggestions on the given projects, plus the
+  // company-wide ones (no project) of the given companies.
+  listForManager({
+    projectIds,
+    companyIds,
+  }: {
+    projectIds: number[];
+    companyIds: number[];
+  }) {
+    if (projectIds.length === 0 && companyIds.length === 0) return [];
     return this.prisma.suggestion.findMany({
-      where: { projectId: { in: projectIds } },
+      where: {
+        OR: [
+          { projectId: { in: projectIds } },
+          { projectId: null, companyId: { in: companyIds } },
+        ],
+      },
       include: suggestionInclude,
       orderBy: { createdAt: "desc" },
     });

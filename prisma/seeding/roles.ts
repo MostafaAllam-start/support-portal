@@ -1,8 +1,8 @@
 import type { PrismaClient, Role } from "../../app/generated/prisma/client";
 
-// The roles that can be granted to a user within a project (via UserProject).
-// Admin is not here — it is the global `isAdmin` flag on User; a plain customer
-// is simply a user with no project membership.
+// The roles that can be granted to a team member within a project (via
+// UserProject). The account type (admin, support, team member, client) is the
+// User.role enum, not a row here.
 export const ROLE_NAMES = [
   "software-engineer",
   "reviewer",

@@ -1,11 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import {
-  managedProjectIds,
-  memberProjectIds,
-  requireDashboardUser,
-} from "@/lib/auth/guards";
+import { requireDashboardUser, ticketScopeForUser } from "@/lib/auth/guards";
 import { ticketService, userService } from "@/services";
-import { UserRole } from "@/lib/auth/roles";
 import { TicketsTable } from "../_components/tickets-table";
 import { AddTicketButton } from "../_components/ticket-row-actions";
 
@@ -19,21 +14,14 @@ export default async function TicketsPage({
   const user = await requireDashboardUser();
   const t = await getTranslations("Dashboard");
 
-  const isEngineer = user.role.name === "software-engineer";
-  const isManager = user.role.name === "manager";
-  const isReviewer = user.role.name === "reviewer";
-  const isConsultant = user.role.name === "sap-consultant";
-  const isAdmin = user.userRole === UserRole.Admin;
+  const isManager = user.effectiveRole === "manager";
+  const isReviewer = user.effectiveRole === "reviewer";
+  const isConsultant = user.effectiveRole === "sap-consultant";
+  const isAdmin = user.effectiveRole === "admin";
 
-  const tickets = isAdmin
-    ? await ticketService.listAll()
-    : isManager
-      ? await ticketService.forProjects(await managedProjectIds(user))
-      : isReviewer
-        ? await ticketService.forProjects(memberProjectIds(user))
-        : isEngineer || isConsultant
-          ? await ticketService.assignedTo(user.id)
-          : [];
+  // Managers see their projects' tickets, reviewers and consultants their
+  // company's, engineers the ones assigned to them (see ticketScopeForUser).
+  const tickets = await ticketService.forScope(ticketScopeForUser(user));
 
   const canAddTicket = isAdmin || isManager;
   const canEditTicket = isAdmin || isManager;
@@ -46,9 +34,11 @@ export default async function TicketsPage({
 
   const title = isAdmin
     ? t("tickets.title")
-    : isManager || isReviewer
+    : isManager
       ? t("nav.projectTickets")
-      : t("nav.myTickets");
+      : isReviewer || isConsultant
+        ? t("nav.companyTickets")
+        : t("nav.myTickets");
 
   return (
     <div className="space-y-6">

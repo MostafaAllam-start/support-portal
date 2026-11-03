@@ -1,6 +1,6 @@
 {
-  "title": "Choose your company",
-  "subtitle": "Select the company you belong to. You can change this later.",
+  "title": "Choose your scope",
+  "subtitle": "Select the scope you belong to. You can change this later.",
   "confirm": "Continue",
-  "switch": "Switch company"
+  "switch": "Switch scope"
 }

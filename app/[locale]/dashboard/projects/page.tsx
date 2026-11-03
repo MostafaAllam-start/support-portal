@@ -28,12 +28,18 @@ export default async function ProjectsPage({
   const [projects, companies, users, roles] = await Promise.all([
     projectService.listDetailed(),
     companyService.list(),
-    userService.list(),
+    // Only team members manage projects or hold project roles.
+    userService.teamMemberOptions(),
     roleService.list(),
   ]);
 
   const companyOptions = companies.map((c) => ({ id: c.id, name: c.name }));
-  const userOptions = users.map((u) => ({ id: u.id, name: u.name }));
+  // The team members who can work on a project of the given company.
+  const userOptionsFor = (companyId: number) =>
+    users
+      .filter((user) => user.companyIds.includes(companyId))
+      .map(({ id, name }) => ({ id, name }));
+  const userOptions = users.map(({ id, name }) => ({ id, name }));
   const roleOptions = roles.map((r) => ({ id: r.id, name: r.name }));
 
   return (
@@ -101,7 +107,7 @@ export default async function ProjectsPage({
                         })),
                       }}
                       companies={companyOptions}
-                      users={userOptions}
+                      users={userOptionsFor(project.companyId)}
                       roles={roleOptions}
                     />
                   </TableCell>

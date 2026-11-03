@@ -42,9 +42,10 @@ export async function seedProjects(
       key: "ecm-platform",
       name: "ECM Platform",
       location: "Amman",
-      company: companies.ecm,
+      company: companies["ecm+"],
       managerUsername: undefined,
-      members: [],
+      // An ECM+ reviewer: sees every ECM+ ticket (they carry no project).
+      members: [{ username: "reviewer2", role: "reviewer" as RoleName }],
     },
   ];
 
