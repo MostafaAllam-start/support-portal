@@ -92,11 +92,16 @@
     <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4" rx="1"/><path d="M5 9v9.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 12.5h4"/></symbol>
     <symbol id="i-audit" viewBox="0 0 24 24"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M15 3.5V7h3.5M9 11h6M9 14h6M9 17h4"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5V17"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 2.8v5.6c0 4.6-3.1 8.2-7.5 9.6-4.4-1.4-7.5-5-7.5-9.6V5.8z"/><path d="M8.6 12l2.5 2.5 4.4-4.8"/></symbol>
     <symbol id="i-sign" viewBox="0 0 24 24"><path d="M4 16.5c2.5-.3 3.6-6.5 5.5-6.5 1.6 0 .2 5 2 5 1.4 0 2-3 3.4-3 1 0 1.1 1.6 2.1 1.6.7 0 1.3-.5 3-1.6"/><path d="M4 20h16"/></symbol>
     <symbol id="i-backup" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></symbol>
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1V10a2 2 0 0 0 0 4v2.5a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V14a2 2 0 0 0 0-4z"/><path d="M7.5 10.5h5M7.5 13.5h3.5M15.5 7v10"/></symbol>
     <symbol id="i-track" viewBox="0 0 24 24"><path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><path d="M3.5 6.5l1.3 1.3 2.2-2.4M3.5 12l1.3 1.3 2.2-2.4"/><circle cx="5.2" cy="17.5" r="1.3"/></symbol>
     <symbol id="i-idea" viewBox="0 0 24 24"><path d="M4 5.5h16V16H10l-4.5 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+    <symbol id="i-suite" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.2"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4.5 20.5v-16a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14.5 9.5h4a1 1 0 0 1 1 1v10M3 20.5h18"/><path d="M8 7.5h3M8 11h3M8 14.5h3"/></symbol>
+    <symbol id="i-demo" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="1.5"/><path d="M10 8.5v5l4.2-2.5zM8 20.5h8M12 17v3.5"/></symbol>
     <!-- Module glyphs (as in the module seal) -->
     <symbol id="m-dms" viewBox="0 0 24 24"><path d="M3 4h18v4H3zM5 8v12h14V8M10 12h4"/></symbol>
     <symbol id="m-cms" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
@@ -165,22 +170,7 @@
               </div>
             </li>
             <li class="nav__item"><a class="nav__link" href="/site/about" aria-current="page">About ECM Plus</a></li>
-            <li class="nav__item" data-menu>
-              <a class="nav__link nojs-only" href="/support">Support</a>
-              <button class="nav__link nav__trigger js-only" type="button" aria-expanded="false" aria-controls="menu-support">
-                Support<svg class="icon nav__chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg>
-              </button>
-              <div class="menu-panel dropdown" id="menu-support">
-                <p class="dropdown__h">Client portal</p>
-                <ul class="dropdown__list">
-                  <li><a href="/support"><span class="dropdown__t">Support centre</span><span class="dropdown__d">The starting point for ECM+ support</span></a></li>
-                  <li><a href="/support/login"><span class="dropdown__t">Sign in to the client portal</span><span class="dropdown__d">Your organization’s support tickets in one place</span></a></li>
-                  <li><a href="/support/tickets/new"><span class="dropdown__t">Submit a support ticket</span><span class="dropdown__d">Contact the ECM+ support team</span></a></li>
-                  <li><a href="/support/tickets"><span class="dropdown__t">Track your tickets</span><span class="dropdown__d">Follow each reply until resolution</span></a></li>
-                  <li><a href="/support/suggestions"><span class="dropdown__t">Submit a suggestion or complaint</span><span class="dropdown__d">Recorded and tracked like support tickets</span></a></li>
-                </ul>
-              </div>
-            </li>
+            <li class="nav__item"><a class="nav__link" href="/support">Support</a></li>
           </ul>
         </nav>
 
@@ -327,7 +317,7 @@
           <p class="footer__tagline">A unified suite for the management of documents, correspondence, processes and meetings.</p>
           <div class="footer__ctc" id="about">
             <img src="/assets/brand/ctc-logo.webp" alt="CTC MENA, exclusive agent" width="44" height="44" loading="lazy">
-            <p>ECM Plus is a Canadian company. CTC MENA is its exclusive agent and is responsible for its Arabization.</p>
+            <p>ECM Plus is a Canadian company. CTC MENA is its exclusive agent.</p>
           </div>
         </div>
 
@@ -339,7 +329,6 @@
               <li><a href="/site/correspondence">Correspondence</a></li>
               <li><a href="/site/processes">Processes</a></li>
               <li><a href="/site/meetings">Meetings</a></li>
-              <li><a href="/site#security">Security</a></li>
             </ul>
           </div>
           <div class="footer__col">
@@ -356,6 +345,7 @@
             <h2>Resources</h2>
             <ul>
               <li><a href="/site#contact" data-prefill="Please send us the ECM+ product overview.">Product overview</a></li>
+              <li><a href="/site#security">Security</a></li>
               <li><a href="/site#contact" data-prefill="Please send us the ECM+ integration guide.">Integration guide</a></li>
               <li><a href="/site#faq">Frequently asked questions</a></li>
               <li><a href="/site#contact">Request a demo</a></li>
