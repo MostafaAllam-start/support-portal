@@ -106,11 +106,16 @@
     <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="4" rx="1"/><path d="M5 9v9.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 12.5h4"/></symbol>
     <symbol id="i-audit" viewBox="0 0 24 24"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M15 3.5V7h3.5M9 11h6M9 14h6M9 17h4"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5V17"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 2.8v5.6c0 4.6-3.1 8.2-7.5 9.6-4.4-1.4-7.5-5-7.5-9.6V5.8z"/><path d="M8.6 12l2.5 2.5 4.4-4.8"/></symbol>
     <symbol id="i-sign" viewBox="0 0 24 24"><path d="M4 16.5c2.5-.3 3.6-6.5 5.5-6.5 1.6 0 .2 5 2 5 1.4 0 2-3 3.4-3 1 0 1.1 1.6 2.1 1.6.7 0 1.3-.5 3-1.6"/><path d="M4 20h16"/></symbol>
     <symbol id="i-backup" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></symbol>
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1V10a2 2 0 0 0 0 4v2.5a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V14a2 2 0 0 0 0-4z"/><path d="M7.5 10.5h5M7.5 13.5h3.5M15.5 7v10"/></symbol>
     <symbol id="i-track" viewBox="0 0 24 24"><path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><path d="M3.5 6.5l1.3 1.3 2.2-2.4M3.5 12l1.3 1.3 2.2-2.4"/><circle cx="5.2" cy="17.5" r="1.3"/></symbol>
     <symbol id="i-idea" viewBox="0 0 24 24"><path d="M4 5.5h16V16H10l-4.5 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+    <symbol id="i-suite" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.2"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4.5 20.5v-16a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14.5 9.5h4a1 1 0 0 1 1 1v10M3 20.5h18"/><path d="M8 7.5h3M8 11h3M8 14.5h3"/></symbol>
+    <symbol id="i-demo" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="1.5"/><path d="M10 8.5v5l4.2-2.5zM8 20.5h8M12 17v3.5"/></symbol>
     <!-- Module glyphs (as in the module seal) -->
     <symbol id="m-dms" viewBox="0 0 24 24"><path d="M3 4h18v4H3zM5 8v12h14V8M10 12h4"/></symbol>
     <symbol id="m-cms" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
@@ -179,22 +184,7 @@
               </div>
             </li>
             <li class="nav__item"><a class="nav__link" href="/site/about">About ECM Plus</a></li>
-            <li class="nav__item" data-menu>
-              <a class="nav__link nojs-only" href="/support">Support</a>
-              <button class="nav__link nav__trigger js-only" type="button" aria-expanded="false" aria-controls="menu-support">
-                Support<svg class="icon nav__chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg>
-              </button>
-              <div class="menu-panel dropdown" id="menu-support">
-                <p class="dropdown__h">Client portal</p>
-                <ul class="dropdown__list">
-                  <li><a href="/support"><span class="dropdown__t">Support centre</span><span class="dropdown__d">The starting point for ECM+ support</span></a></li>
-                  <li><a href="/support/login"><span class="dropdown__t">Sign in to the client portal</span><span class="dropdown__d">Your organization’s support tickets in one place</span></a></li>
-                  <li><a href="/support/tickets/new"><span class="dropdown__t">Submit a support ticket</span><span class="dropdown__d">Contact the ECM+ support team</span></a></li>
-                  <li><a href="/support/tickets"><span class="dropdown__t">Track your tickets</span><span class="dropdown__d">Follow each reply until resolution</span></a></li>
-                  <li><a href="/support/suggestions"><span class="dropdown__t">Submit a suggestion or complaint</span><span class="dropdown__d">Recorded and tracked like support tickets</span></a></li>
-                </ul>
-              </div>
-            </li>
+            <li class="nav__item"><a class="nav__link" href="/support">Support</a></li>
           </ul>
         </nav>
 
@@ -267,7 +257,7 @@
     <section class="section suite" id="suite" aria-labelledby="suite-title">
       <div class="wrap">
         <div class="section-head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">01</span>The suite</p>
+          <p class="eyebrow"><span class="eyebrow__no">01</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-suite"/></svg>The suite</p>
           <h2 id="suite-title">4 integrated modules.</h2>
           <p class="section-lead">ECM+ provides a single environment for documents, correspondence, processes and meetings.</p>
         </div>
@@ -334,9 +324,10 @@
               <h3 class="card__name"><a href="/site/meetings">Meetings</a></h3>
               <p class="card__line">Manage committees from the agenda to signed minutes and tracked action items.</p>
               <ul class="card__caps">
-                <li>Room booking with clash detection</li>
+                <li>Committees, with their members and roles</li>
                 <li>Voting on each agenda item</li>
                 <li>Minutes circulated for signature</li>
+                <li>Tracking the tasks arising from the minutes, and their status</li>
               </ul>
             </div>
           </li>
@@ -348,7 +339,7 @@
     <section class="section lifecycle" id="lifecycle" aria-labelledby="lifecycle-title">
       <div class="wrap lifecycle__grid">
         <div class="section-head lifecycle__head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">02</span>Lifecycle</p>
+          <p class="eyebrow"><span class="eyebrow__no">02</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-flow"/></svg>Lifecycle</p>
           <h2 id="lifecycle-title">The suite governs each record from capture to retention.</h2>
           <p class="section-lead">Information in ECM+ moves through six stages: capture, registration, routing, approval, archiving and retention. Each step is recorded in the audit trail, from receipt of the file to the application of its retention rules.</p>
         </div>
@@ -387,7 +378,7 @@
                 <span class="ledger__no" aria-hidden="true">04</span>
                 <div class="ledger__body">
                   <h3 class="ledger__stage">Approve</h3>
-                  <p class="ledger__entry">Correspondence is reviewed and then approved or returned, and committees circulate their minutes for digital signature.</p>
+                  <p class="ledger__entry">Correspondence is reviewed and then approved or returned, and committees circulate their minutes for digital signature to the members the meeting organizer selects.</p>
                   <ul class="ledger__mods" aria-label="Modules"><li class="chip"><svg class="icon chip__icon" aria-hidden="true" focusable="false"><use href="#m-cms"/></svg>CMS</li><li class="chip"><svg class="icon chip__icon" aria-hidden="true" focusable="false"><use href="#m-mms"/></svg>MMS</li></ul>
                 </div>
               </li>
@@ -417,7 +408,7 @@
     <section class="section governance" id="security" aria-labelledby="security-title">
       <div class="wrap">
         <div class="section-head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">03</span>Security</p>
+          <p class="eyebrow"><span class="eyebrow__no">03</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>Security</p>
           <h2 id="security-title">Every view and download is traceable.</h2>
           <p class="section-lead">Each protected view or download carries a unique access trace code. Scanning the code on a leaked page identifies the user, the time, the channel, the device and the network address.</p>
         </div>
@@ -489,8 +480,8 @@
                 <p>Every addition, view, edit, download, print, share and deletion is recorded.</p>
               </li>
               <li data-reveal>
-                <h3><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>Two-factor authentication and Nafath</h3>
-                <p>Verification codes are sent by WhatsApp or email. Nafath sign-in uses the Saudi national identity, alone or together with a password.</p>
+                <h3><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>Two-step verification and document locking</h3>
+                <p>Users verify their identity in two steps with a code sent to WhatsApp or email, and sensitive documents can be locked so they open only with a one-time code.</p>
               </li>
               <li data-reveal>
                 <h3><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-sign"/></svg>Digital signatures</h3>
@@ -501,7 +492,6 @@
                 <p>Scheduled backups and named restore points can be recovered whenever needed, and older copies are removed automatically on a set schedule.</p>
               </li>
             </ul>
-            <a class="btn btn--ghost-gold" href="#contact" data-prefill="Please contact us about ECM+ security and governance." data-reveal>Contact our team<svg class="icon flip" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
           </div>
         </div>
       </div>
@@ -511,9 +501,9 @@
     <section class="section deploy" id="platform" aria-labelledby="platform-title">
       <div class="wrap">
         <div class="section-head" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">04</span>Deployment and integration</p>
+          <p class="eyebrow"><span class="eyebrow__no">04</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg>Deployment and integration</p>
           <h2 id="platform-title">ECM+ runs on your organization’s servers.</h2>
-          <p class="section-lead">Your organization keeps full control of its documents. The suite connects securely to the systems you already use, and each connection is limited to the permissions you set.</p>
+          <p class="section-lead">Your documents stay fully under your control. The suite connects securely to the systems you already rely on, and each connection is limited to the permissions you grant it.</p>
         </div>
 
         <div class="deploy__grid">
@@ -543,9 +533,8 @@
           </div>
 
           <dl class="facts">
-            <div id="platform-datacentre" data-reveal><dt>Data under your control</dt><dd>ECM+ runs on your organization’s servers, so your documents remain under your control.</dd></div>
+            <div id="platform-datacentre" data-reveal><dt>Data under your control</dt><dd>ECM+ runs on your organization’s servers, so your documents are managed under your policies.</dd></div>
             <div id="platform-connect" data-reveal><dt>Access limited to what you grant</dt><dd>Other systems connect securely, and each connection is limited to the document types and folders you specify.</dd></div>
-            <div id="platform-modules" data-reveal><dt>Modules switched on as needed</dt><dd>You can start with one module; the others remain visible but inactive until required.</dd></div>
           </dl>
         </div>
       </div>
@@ -559,7 +548,7 @@
         </div>
         <div class="scrim" aria-hidden="true"></div>
         <div class="wrap band__copy" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">05</span>Sectors</p>
+          <p class="eyebrow"><span class="eyebrow__no">05</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-building"/></svg>Sectors</p>
           <h2 id="sectors-title">How the suite applies to each sector.</h2>
           <p class="section-lead">The following example scenarios illustrate the capabilities of the suite. They are not customer case studies.</p>
         </div>
@@ -601,7 +590,7 @@
         </div>
 
         <div class="support__plate" data-reveal>
-          <p class="eyebrow"><span class="eyebrow__no">06</span>Client portal</p>
+          <p class="eyebrow"><span class="eyebrow__no">06</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-ticket"/></svg>Client portal</p>
           <h2 id="support-title">Support services for ECM+ customers.</h2>
           <p class="section-lead">Through the ECM+ client portal, your teams submit support tickets to the ECM+ support team and follow them until resolution, in Arabic or English.</p>
 
@@ -637,9 +626,8 @@
 
           <div class="support__ctas">
             <a class="btn btn--ink btn--lg" href="/support/login">Sign in to the client portal</a>
-            <a class="link-arrow" href="/support">Support centre<svg class="icon flip" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
           </div>
-          <p class="support__note">Accounts are created by the ECM+ support team for your organization. If you do not have an account, please contact your ECM+ administrator or the <a href="#contact">technical support team</a>.</p>
+          <p class="support__note">Accounts are created by the ECM+ support team for your organization. If you do not have an account, please contact your ECM+ administrator or the <a href="/support">technical support team</a>.</p>
         </div>
       </div>
     </section>
@@ -654,7 +642,7 @@
       <div class="wrap">
         <div class="plate contact__plate" data-reveal>
           <div class="contact__intro">
-            <p class="eyebrow"><span class="eyebrow__no">07</span>Request a demo</p>
+            <p class="eyebrow"><span class="eyebrow__no">07</span><svg class="icon eyebrow__icon" aria-hidden="true" focusable="false"><use href="#i-demo"/></svg>Request a demo</p>
             <h2 id="contact-title">ECM+ is demonstrated on scenarios drawn from your organization’s work.</h2>
             <p class="section-lead">Please specify the modules of interest, and our team will arrange a demonstration in Arabic or English.</p>
 
@@ -730,7 +718,7 @@
           <p class="footer__tagline">A unified suite for the management of documents, correspondence, processes and meetings.</p>
           <div class="footer__ctc" id="about">
             <img src="/assets/brand/ctc-logo.webp" alt="CTC MENA, exclusive agent" width="44" height="44" loading="lazy">
-            <p>ECM Plus is a Canadian company. CTC MENA is its exclusive agent and is responsible for its Arabization.</p>
+            <p>ECM Plus is a Canadian company. CTC MENA is its exclusive agent.</p>
           </div>
         </div>
 
@@ -742,7 +730,6 @@
               <li><a href="/site/correspondence">Correspondence</a></li>
               <li><a href="/site/processes">Processes</a></li>
               <li><a href="/site/meetings">Meetings</a></li>
-              <li><a href="#security">Security</a></li>
             </ul>
           </div>
           <div class="footer__col">
@@ -759,6 +746,7 @@
             <h2>Resources</h2>
             <ul>
               <li><a href="#contact" data-prefill="Please send us the ECM+ product overview.">Product overview</a></li>
+              <li><a href="#security">Security</a></li>
               <li><a href="#contact" data-prefill="Please send us the ECM+ integration guide.">Integration guide</a></li>
               <li><a href="#faq">Frequently asked questions</a></li>
               <li><a href="#contact">Request a demo</a></li>
