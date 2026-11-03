@@ -1,4 +1,5 @@
 // Portal glue for the branding site (copied to public/site by scripts/import-site.mjs).
+//
 // The demo form posts to the portal's /contact handler, which redirects back here with
 // ?request=sent or ?request=invalid. Show that outcome as a toast that looks like the
 // portal's own (sonner, components/ui/sonner.tsx), then drop the flag from the
@@ -78,4 +79,72 @@
     var form = document.getElementById("demo-form");
     if (form) form.reset();
   }
+})();
+
+// A support link leaves this static site for the portal, which can take a few
+// seconds to answer while the browser sits on the old page. Show that something is
+// happening: a full-page loader with a message, from the click until the portal's
+// page replaces this one. Styled by public/site/portal.css.
+(function () {
+  var ar = document.documentElement.lang === "ar";
+  var loader = null;
+  var timer = null;
+
+  function hide() {
+    clearTimeout(timer);
+    if (loader) loader.remove();
+    loader = null;
+  }
+
+  function line(className, text) {
+    var el = document.createElement("p");
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
+
+  function show() {
+    hide();
+    loader = document.createElement("div");
+    loader.className = "portal-loader";
+    loader.setAttribute("role", "status");
+    loader.setAttribute("dir", ar ? "rtl" : "ltr");
+    var spinner = document.createElement("span");
+    spinner.className = "portal-loader-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    loader.appendChild(spinner);
+    loader.appendChild(
+      line("portal-loader-title", ar ? "جارٍ فتح بوابة الدعم…" : "Opening the support portal…"),
+    );
+    loader.appendChild(
+      line("portal-loader-hint", ar ? "قد يستغرق ذلك بضع ثوانٍ." : "This can take a few seconds."),
+    );
+    document.body.appendChild(loader);
+    // A stopped or failed navigation leaves this page in place: don't block it.
+    timer = setTimeout(hide, 90000);
+  }
+
+  document.addEventListener("click", function (event) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    var link = event.target.closest ? event.target.closest('a[href^="/support"]') : null;
+    if (!link || (link.target && link.target !== "_self")) return;
+    show();
+  });
+
+  // Back from the portal can restore this page as it was left, loader included.
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) hide();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") hide();
+  });
 })();

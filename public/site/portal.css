@@ -71,3 +71,54 @@
 @media (prefers-reduced-motion: reduce) {
   .portal-toast { transition: none; }
 }
+
+/* The loader a support link shows while the portal opens (public/site/portal.js). */
+.portal-loader {
+  position: fixed;
+  z-index: 2147483646;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--ink);
+  text-align: center;
+  animation: portal-loader-in .15s ease-out;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .portal-loader {
+    background: rgba(244, 242, 238, .78);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    backdrop-filter: blur(10px) saturate(1.2);
+  }
+  :root[data-theme="dark"] .portal-loader { background: rgba(16, 20, 27, .78); }
+}
+.portal-loader-spinner {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  margin-block-end: 14px;
+  border: 3px solid var(--line);
+  border-block-start-color: var(--gold);
+  border-radius: 50%;
+  animation: portal-loader-spin .8s linear infinite;
+}
+.portal-loader-title { margin: 0; font-size: 18px; font-weight: 600; }
+.portal-loader-hint { margin: 0; font-size: 14px; color: var(--muted); }
+@keyframes portal-loader-in { from { opacity: 0; } }
+@keyframes portal-loader-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .portal-loader { animation: none; }
+  .portal-loader-spinner { animation-duration: 2.4s; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .portal-loader,
+  :root[data-theme="dark"] .portal-loader {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
