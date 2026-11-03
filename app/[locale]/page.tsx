@@ -3,8 +3,9 @@ import { redirect } from "@/i18n/navigation";
 import { companyService, userService } from "@/services";
 import {
   brandCompanyId,
-  canViewDashboard,
-  requireCompanySelection,
+  brandScope,
+  hasDashboardAccess,
+  requireScopeSelection,
 } from "@/lib/auth/guards";
 import { brandKeyForCompany } from "@/lib/companies";
 import { LandingHeader } from "./_components/landing/landing-header";
@@ -26,16 +27,17 @@ export default async function HomePage({
   // Users with dashboard access get the dashboard; anonymous visitors and plain
   // customers see the public landing page.
   const user = await userService.currentUser();
-  if (user && canViewDashboard(user)) {
+  if (user && hasDashboardAccess(user)) {
     redirect({ href: "/dashboard", locale });
   }
 
-  // Company selection is the first step: an anonymous visitor without a choice is
+  // Scope selection is the first step: an anonymous visitor without a choice is
   // sent to pick one before the landing page renders.
-  await requireCompanySelection();
+  await requireScopeSelection();
 
-  // Brand the landing for the selected company (the user's company, else the
-  // cookie choice).
+  // Brand the landing for the selected scope and its company (the user's company,
+  // else the scope's first).
+  const scope = await brandScope();
   const companyId = await brandCompanyId();
   const company = companyId ? await companyService.findById(companyId) : null;
   const brand = brandKeyForCompany(company?.name);
@@ -50,7 +52,7 @@ export default async function HomePage({
         <LandingPartners brand={brand} companyId={companyId} />
         <LandingContact />
       </main>
-      <LandingFooter brand={brand} />
+      <LandingFooter brand={brand} logo={scope?.logo} logoAlt={scope?.name} />
     </div>
   );
 }

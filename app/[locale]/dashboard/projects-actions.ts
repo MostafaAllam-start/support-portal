@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { projectService, userProjectService } from "@/services";
+import { getTranslations } from "next-intl/server";
+import { projectService, userProjectService, userService } from "@/services";
 import { requireRole } from "@/lib/auth/guards";
 
 export type ProjectActionState = {
@@ -44,6 +45,21 @@ function revalidate() {
   revalidatePath("/[locale]/dashboard/projects", "page");
 }
 
+// Only team members whose scopes include the project's company manage it or
+// hold a role on it. Returns the error to show otherwise (or null). The pickers
+// list only those users, so this guards against stale or tampered input.
+async function teamMemberError(
+  userId: number,
+  companyId: number,
+): Promise<string | null> {
+  const companyIds = await userService.teamMemberCompanyIds(userId);
+  if (companyIds?.includes(companyId)) return null;
+  const t = await getTranslations("Dashboard");
+  return companyIds == null
+    ? t("projects.teamMemberOnly")
+    : t("projects.outsideScope");
+}
+
 export async function createProjectAction(
   _prev: ProjectActionState,
   formData: FormData,
@@ -57,6 +73,10 @@ export async function createProjectAction(
     managerId: formData.get("managerId") || undefined,
   });
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  if (parsed.data.managerId) {
+    const error = await teamMemberError(parsed.data.managerId, parsed.data.companyId);
+    if (error) return { error };
+  }
 
   try {
     const { managerId, ...data } = parsed.data;
@@ -86,6 +106,10 @@ export async function updateProjectAction(
     managerId: formData.get("managerId") || undefined,
   });
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  if (parsed.data.managerId) {
+    const error = await teamMemberError(parsed.data.managerId, parsed.data.companyId);
+    if (error) return { error };
+  }
 
   try {
     const { id, managerId, ...data } = parsed.data;
@@ -120,7 +144,7 @@ export async function deleteProjectAction(
   return { ok: true };
 }
 
-// Adds (or re-roles) a reviewer/consultant on a project via the UserProject join.
+// Adds (or re-roles) a team member on a project via the UserProject join.
 export async function addProjectMemberAction(
   _prev: ProjectActionState,
   formData: FormData,
@@ -133,6 +157,10 @@ export async function addProjectMemberAction(
     roleId: formData.get("roleId"),
   });
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  const project = await projectService.findById(parsed.data.projectId);
+  if (!project) return { error: "Invalid project" };
+  const memberError = await teamMemberError(parsed.data.userId, project.companyId);
+  if (memberError) return { error: memberError };
 
   try {
     await userProjectService.assign(parsed.data);

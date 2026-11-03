@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth/jwt";
 import { loginSchema, createUserSchema, updateUserSchema } from "./schemas";
 import { UserRole, effectiveRoleName } from "@/lib/auth/roles";
+import type { ProjectMembershipInput } from "@/services/user-project-service/types";
 import type {
   LoginInput,
   CreateUserInput,
@@ -25,7 +26,7 @@ const CONSULTANT_ROLE = "sap-consultant";
 const ASSIGNABLE_ROLES = [ENGINEER_ROLE, CONSULTANT_ROLE] as const;
 
 // Relations loaded to derive a user's effective role and per-project memberships
-// (roles are per-project now; admin is the `isAdmin` flag).
+// (the account type is User.role; team members also hold project roles).
 const authInclude = {
   projectMemberships: {
     select: {
@@ -34,8 +35,31 @@ const authInclude = {
       project: { select: { companyId: true } },
     },
   },
-  managedProjects: { select: { id: true } },
+  managedProjects: { select: { id: true, companyId: true } },
+  scopes: { select: { id: true, companies: { select: { id: true } } } },
 } as const;
+
+// What's needed to tell which companies a user works with.
+const teamMemberScopeSelect = {
+  companyId: true,
+  scopes: { select: { companies: { select: { id: true } } } },
+} as const;
+
+// The distinct companies of a user's scopes.
+function companyIdsOfScopes(scopes: { companies: { id: number }[] }[]): number[] {
+  return [...new Set(scopes.flatMap((scope) => scope.companies.map((c) => c.id)))];
+}
+
+// The companies a user works with: their scopes' companies, or their main
+// company without a scope.
+function scopeCompanyIdsOf(user: {
+  companyId: number | null;
+  scopes: { companies: { id: number }[] }[];
+}): number[] {
+  const ids = companyIdsOfScopes(user.scopes);
+  if (ids.length > 0) return ids;
+  return user.companyId != null ? [user.companyId] : [];
+}
 
 export class UserService extends Service {
   // Verifies credentials, sets the JWT as an httpOnly cookie, and returns both
@@ -145,16 +169,70 @@ export class UserService extends Service {
   // Active global admin user ids (for notification fan-out).
   async activeAdminIds(): Promise<number[]> {
     const admins = await this.prisma.user.findMany({
-      where: { deletedAt: null, isDisabled: false, isAdmin: true },
+      where: { deletedAt: null, isDisabled: false, role: UserRole.admin },
       select: { id: true },
     });
     return admins.map((user) => user.id);
   }
 
-  // Active system-support user ids (for branding-site request notifications).
-  async activeSystemSupportIds(): Promise<number[]> {
+  // The companies an active team member works with (their scopes' companies, or
+  // their main company without a scope), or null when the user isn't an active
+  // team member — the only account type that can manage a project or hold a
+  // project role.
+  async teamMemberCompanyIds(id: number): Promise<number[] | null> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null, isDisabled: false, role: UserRole.team_member },
+      select: teamMemberScopeSelect,
+    });
+    return user ? scopeCompanyIdsOf(user) : null;
+  }
+
+  // Active reviewers who work a company's tickets: team members with a reviewer
+  // project role whose scopes include that company (mirrors the reviewer scope
+  // in ticketScopeForUser).
+  async reviewerIdsForCompany(companyId: number): Promise<number[]> {
     const users = await this.prisma.user.findMany({
-      where: { deletedAt: null, isDisabled: false, isSystemSupport: true },
+      where: {
+        deletedAt: null,
+        isDisabled: false,
+        role: UserRole.team_member,
+        projectMemberships: { some: { role: { name: "reviewer" } } },
+        OR: [
+          { scopes: { some: { companies: { some: { id: companyId } } } } },
+          { scopes: { none: {} }, companyId },
+        ],
+      },
+      select: { id: true },
+    });
+    return users.map((user) => user.id);
+  }
+
+  // Active team members with the companies they work with, for the project
+  // manager and member pickers.
+  async teamMemberOptions(): Promise<
+    { id: number; name: string; companyIds: number[] }[]
+  > {
+    const users = await this.prisma.user.findMany({
+      where: { deletedAt: null, isDisabled: false, role: UserRole.team_member },
+      select: { id: true, name: true, ...teamMemberScopeSelect },
+      orderBy: { name: "asc" },
+    });
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      companyIds: scopeCompanyIdsOf(user),
+    }));
+  }
+
+  // Active support team member ids (for branding-site request notifications).
+  async activeSupportIds(): Promise<number[]> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        isDisabled: false,
+        role: UserRole.team_member,
+        isSupport: true,
+      },
       select: { id: true },
     });
     return users.map((user) => user.id);
@@ -168,6 +246,7 @@ export class UserService extends Service {
         id: { in: userIds },
         deletedAt: null,
         isDisabled: false,
+        role: UserRole.team_member,
         projectMemberships: {
           some: { role: { name: { in: [...ASSIGNABLE_ROLES] } } },
         },
@@ -185,6 +264,7 @@ export class UserService extends Service {
       where: {
         deletedAt: null,
         isDisabled: false,
+        role: UserRole.team_member,
         projectMemberships: {
           some: { role: { name: { in: [...ASSIGNABLE_ROLES] } } },
         },
@@ -261,14 +341,14 @@ export class UserService extends Service {
   }
 
   // Users featured on a company's public landing-page "Our Team" section: active,
-  // flagged as team members, and belonging to that company. Each carries the
-  // contact details needed to render (and optionally open) its card.
-  teamMembersForCompany(companyId: number) {
+  // flagged as featured, and belonging to that company. Each carries the contact
+  // details needed to render (and optionally open) its card.
+  featuredForCompany(companyId: number) {
     return this.prisma.user.findMany({
       where: {
         deletedAt: null,
         isDisabled: false,
-        isTeamMember: true,
+        isFeatured: true,
         companyId,
       },
       select: {
@@ -287,11 +367,11 @@ export class UserService extends Service {
     });
   }
 
-  // All users flagged as team members, with their company, for the admin
-  // team-members page.
-  teamMembers() {
+  // All users featured on the landing-page team, with their company, for the
+  // admin "Our Team" page.
+  featured() {
     return this.prisma.user.findMany({
-      where: { deletedAt: null, isTeamMember: true },
+      where: { deletedAt: null, isFeatured: true },
       select: {
         id: true,
         name: true,
@@ -323,8 +403,18 @@ export class UserService extends Service {
       where: { deletedAt: null },
       include: {
         company: { select: { id: true, name: true } },
+        scopes: {
+          select: {
+            id: true,
+            name: true,
+            companies: { select: { id: true, name: true } },
+          },
+          orderBy: { name: "asc" },
+        },
         projectMemberships: {
           select: {
+            projectId: true,
+            roleId: true,
             role: { select: { name: true } },
             project: { select: { company: { select: { id: true, name: true } } } },
           },
@@ -339,6 +429,9 @@ export class UserService extends Service {
     return users.map((user) => {
       const companies = new Map<number, string>();
       if (user.company) companies.set(user.company.id, user.company.name);
+      for (const c of user.scopes.flatMap((s) => s.companies)) {
+        companies.set(c.id, c.name);
+      }
       for (const m of user.projectMemberships) {
         companies.set(m.project.company.id, m.project.company.name);
       }
@@ -346,52 +439,68 @@ export class UserService extends Service {
         companies.set(p.company.id, p.company.name);
       }
 
-      const roleName = effectiveRoleName({
-        isAdmin: user.isAdmin,
-        isSystemSupport: user.isSystemSupport,
+      const membershipRoleNames = user.projectMemberships.map((m) => m.role.name);
+      const effectiveRole = effectiveRoleName({
+        role: user.role,
         managesProject: user.managedProjects.length > 0,
-        membershipRoleNames: user.projectMemberships.map((m) => m.role.name),
+        membershipRoleNames,
       });
 
       const {
         password: _password,
-        projectMemberships: _memberships,
+        projectMemberships,
         managedProjects: _managed,
         company: _company,
+        scopes,
         ...safe
       } = user;
-      const hasProjectRole = user.projectMemberships.length > 0 || user.managedProjects.length > 0;
       return {
         ...safe,
-        canAccessDashboard:
-          safe.canAccessDashboard || safe.isSystemSupport || hasProjectRole,
-        role: { name: roleName },
+        effectiveRole,
+        // The scopes (CTC, ECM, …) a team member or client holds.
+        scopeIds: scopes.map((s) => s.id),
+        scopeNames: scopes.map((s) => s.name),
+        // The distinct project roles a team member holds ("manager" also when
+        // they manage a project), for the Users table.
+        projectRoles: [
+          ...new Set([
+            ...(user.managedProjects.length > 0 ? ["manager"] : []),
+            ...membershipRoleNames,
+          ]),
+        ],
+        memberships: projectMemberships.map((m) => ({
+          projectId: m.projectId,
+          roleId: m.roleId,
+        })),
         companies: [...companies].map(([id, name]) => ({ id, name })),
       };
     });
   }
 
-  // Creates a new user with a hashed password. Newly created accounts are plain
-  // customers by default; pass `isAdmin`/`canAccessDashboard` to elevate.
+  // Creates a new user with a hashed password. Newly created accounts are clients
+  // by default; pass `role` for another account type. A team member's project
+  // roles (`memberships`) are created in the same write, so the account and its
+  // access land together; they are ignored for any other type.
   //
   // SECURITY: account creation is admin-only. Gate this call behind an admin
   // check in the caller — the service does not enforce who may create accounts
-  // or grant `isAdmin`/`canAccessDashboard`. Other roles are granted per-project
-  // via userProjectService.
+  // or which type they get.
   async create(
     input: CreateUserInput,
     opts: {
-      isAdmin?: boolean;
-      isSystemSupport?: boolean;
-      canAccessDashboard?: boolean;
+      role?: UserRole;
+      isSupport?: boolean;
       companyId?: number | null;
+      scopeIds?: number[];
       website?: string | null;
       whatsapp?: string | null;
       linkedin?: string | null;
-      isTeamMember?: boolean;
+      isFeatured?: boolean;
       hasContactInfoCard?: boolean;
+      memberships?: ProjectMembershipInput[];
     } = {},
   ): Promise<SafeUser> {
+    const role = opts.role ?? UserRole.client;
     const data = createUserSchema.parse(input);
     await this.assertUnique(data.username, data.email);
 
@@ -403,33 +512,46 @@ export class UserService extends Service {
         password: await bcrypt.hash(data.password, BCRYPT_ROUNDS),
         jobTitle: data.jobTitle,
         image: data.image,
-        isAdmin: opts.isAdmin ?? false,
-        isSystemSupport: opts.isSystemSupport ?? false,
-        canAccessDashboard: opts.canAccessDashboard ?? false,
+        role,
+        isSupport: role === UserRole.team_member && (opts.isSupport ?? false),
         companyId: opts.companyId ?? null,
+        ...(opts.scopeIds?.length
+          ? { scopes: { connect: opts.scopeIds.map((id) => ({ id })) } }
+          : {}),
         website: opts.website ?? null,
         whatsapp: opts.whatsapp ?? null,
         linkedin: opts.linkedin ?? null,
-        isTeamMember: opts.isTeamMember ?? false,
+        isFeatured: opts.isFeatured ?? false,
         hasContactInfoCard: opts.hasContactInfoCard ?? false,
+        ...(role === UserRole.team_member && opts.memberships?.length
+          ? { projectMemberships: { create: opts.memberships } }
+          : {}),
       },
     });
     return this.sanitize(user);
   }
 
   // Updates user data. Any field is optional; password is re-hashed when given.
+  // `memberships`, when given, replaces the user's project roles. Only team
+  // members hold project roles: changing a user to any other type also removes
+  // their memberships and unsets them as manager of any project.
   //
-  // SECURITY: changing `isAdmin` is privileged — gate this call behind an
+  // SECURITY: changing `role` is privileged — gate this call behind an
   // authorization check in the caller; the service does not enforce who may
-  // grant admin.
-  async update(id: number, input: UpdateUserInput): Promise<SafeUser> {
-    const { password, ...rest } = updateUserSchema.parse(input);
+  // grant which account type.
+  async update(
+    id: number,
+    input: UpdateUserInput,
+    memberships?: ProjectMembershipInput[],
+  ): Promise<SafeUser> {
+    const { password, scopeIds, ...rest } = updateUserSchema.parse(input);
     await this.assertExists(id);
 
     if (rest.username || rest.email) {
       await this.assertUnique(rest.username, rest.email, id);
     }
 
+    const leavesTeam = rest.role !== undefined && rest.role !== UserRole.team_member;
     const user = await this.prisma.user.update({
       where: { id },
       data: {
@@ -437,6 +559,20 @@ export class UserService extends Service {
         ...(password
           ? { password: await bcrypt.hash(password, BCRYPT_ROUNDS) }
           : {}),
+        // Replaces the user's scopes when given.
+        ...(scopeIds
+          ? { scopes: { set: scopeIds.map((scopeId) => ({ id: scopeId })) } }
+          : {}),
+        ...(leavesTeam
+          ? {
+              projectMemberships: { deleteMany: {} },
+              managedProjects: { set: [] },
+            }
+          : memberships
+            ? {
+                projectMemberships: { deleteMany: {}, create: memberships },
+              }
+            : {}),
       },
     });
     return this.sanitize(user);
@@ -504,7 +640,7 @@ export class UserService extends Service {
 
   // Enriches a raw user (loaded with the authInclude relations) into an AuthUser:
   // strips the password, maps the per-project memberships, records the managed
-  // project ids, and derives the single effective role.
+  // projects, and derives the single effective role.
   private toAuthUser(
     user: User & {
       projectMemberships: {
@@ -512,13 +648,15 @@ export class UserService extends Service {
         role: { name: string };
         project: { companyId: number };
       }[];
-      managedProjects: { id: number }[];
+      managedProjects: { id: number; companyId: number }[];
+      scopes: { id: number; companies: { id: number }[] }[];
     },
   ): AuthUser {
     const {
       password: _password,
       projectMemberships,
       managedProjects,
+      scopes,
       ...safe
     } = user;
     const memberships: UserMembership[] = projectMemberships.map((m) => ({
@@ -526,27 +664,17 @@ export class UserService extends Service {
       companyId: m.project.companyId,
       roleName: m.role.name,
     }));
-    const managedProjectIds = managedProjects.map((p) => p.id);
-    const hasProjectRole = memberships.length > 0 || managedProjectIds.length > 0;
     return {
       ...safe,
-      canAccessDashboard:
-        safe.canAccessDashboard || safe.isSystemSupport || hasProjectRole,
-      userRole: safe.isAdmin
-        ? UserRole.Admin
-        : safe.isSystemSupport
-          ? UserRole.SystemSupport
-          : UserRole.User,
       memberships,
-      managedProjectIds,
-      role: {
-        name: effectiveRoleName({
-          isAdmin: safe.isAdmin,
-          isSystemSupport: safe.isSystemSupport,
-          managesProject: managedProjectIds.length > 0,
-          membershipRoleNames: memberships.map((m) => m.roleName),
-        }),
-      },
+      managedProjects,
+      scopeIds: scopes.map((scope) => scope.id),
+      scopeCompanyIds: companyIdsOfScopes(scopes),
+      effectiveRole: effectiveRoleName({
+        role: safe.role,
+        managesProject: managedProjects.length > 0,
+        membershipRoleNames: memberships.map((m) => m.roleName),
+      }),
     };
   }
 

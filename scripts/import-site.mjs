@@ -82,20 +82,20 @@ function transformHtml(html, filePath, lang) {
 
   if (out.includes('id="demo-form"')) {
     // The demo form posts to the portal's /contact handler: tell it the page
-    // language (for the redirect back), unless the template's form already does,
-    // and load the script that shows the outcome.
+    // language (for the redirect back), unless the template's form already does.
     if (!/<input type="hidden" name="lang"/.test(out)) {
       out = out.replace(
         /(<form\b[^>]*\bid="demo-form"[^>]*>)/,
         `$1\n            <input type="hidden" name="lang" value="${lang}">`,
       );
     }
-    out = out.replace(
-      "</body>",
-      `  <script src="${SITE_PREFIX}/portal.js" defer></script>\n</body>`,
-    );
   }
-  return out;
+  // Every page has support links, so every page loads the script that shows the
+  // loader on them (and the demo form's outcome, where there is one).
+  return out.replace(
+    "</body>",
+    `  <script src="${SITE_PREFIX}/portal.js" defer></script>\n</body>`,
+  );
 }
 
 async function* walk(dir) {

@@ -16,7 +16,7 @@ import type {
   TicketTrendPoint,
   UpdateTicketInput,
 } from "./types";
-import type { Ticket, TicketReport, TicketStatus } from "@/app/generated/prisma/client";
+import type { Prisma, Ticket, TicketReport, TicketStatus } from "@/app/generated/prisma/client";
 
 const ENGINEER_ROLE = "software-engineer";
 const CONSULTANT_ROLE = "sap-consultant";
@@ -51,30 +51,11 @@ export class TicketService extends Service {
     });
   }
 
-  // Engineer dashboard: tickets this engineer is one of the assignees of.
-  assignedTo(assigneeId: number) {
+  // The dashboard ticket list for a role scope (see ticketScopeForUser): the same
+  // filter the KPIs and the detail-page check use, so they can't disagree.
+  forScope(scope: TicketScope) {
     return this.prisma.ticket.findMany({
-      where: { deletedAt: null, assignees: { some: { assigneeId } } },
-      include: ticketInclude,
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  // Reviewer dashboard: user-reported tickets (global reported queue).
-  reported() {
-    return this.prisma.ticket.findMany({
-      where: { deletedAt: null },
-      include: ticketInclude,
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  // Manager dashboard: tickets belonging to the given project(s) — the projects
-  // the manager manages. Returns nothing for an empty list.
-  forProjects(projectIds: number[]) {
-    if (projectIds.length === 0) return Promise.resolve([]);
-    return this.prisma.ticket.findMany({
-      where: { deletedAt: null, projectId: { in: projectIds } },
+      where: this.scopeWhere(scope),
       include: ticketInclude,
       orderBy: { createdAt: "desc" },
     });
@@ -119,6 +100,15 @@ export class TicketService extends Service {
 
   // Full detail for a single ticket — reporter, assigned engineers, and
   // diagnostic reports (newest first, each carrying its author's summary).
+  // The company a ticket belongs to (null for a staff-created ticket without one).
+  async companyIdOf(ticketId: number): Promise<number | null> {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: { companyId: true },
+    });
+    return ticket?.companyId ?? null;
+  }
+
   // Unscoped: intended for staff (dashboard) surfaces that may open tickets they
   // did not report. Replies are fetched separately via replyService (they are
   // polymorphic). Returns null when no such ticket exists.
@@ -203,10 +193,6 @@ export class TicketService extends Service {
   async statsByCompanyAndProject(
     scope: TicketScope,
   ): Promise<CompanyTicketStats[]> {
-    if (scope.kind === "projects" && scope.projectIds.length === 0) {
-      return [];
-    }
-
     const tickets = await this.prisma.ticket.findMany({
       where: this.scopeWhere(scope),
       select: {
@@ -264,7 +250,8 @@ export class TicketService extends Service {
       return project;
     };
 
-    if (scope.kind === "projects") {
+    // A manager's projects are listed even before they have any tickets.
+    if (scope.kind === "filter" && scope.projectIds?.length) {
       const scopedProjects = await this.prisma.project.findMany({
         where: { id: { in: scope.projectIds } },
         select: {
@@ -459,18 +446,22 @@ export class TicketService extends Service {
     return report?.userId ?? null;
   }
 
-  private scopeWhere(scope: TicketScope) {
-    const where: {
-      deletedAt: null;
-      userId?: number;
-      assignees?: { some: { assigneeId: number } };
-      projectId?: { in: number[] };
-    } = { deletedAt: null };
-    if (scope.kind === "assigned")
-      where.assignees = { some: { assigneeId: scope.userId } };
-    if (scope.kind === "reported") where.userId = scope.userId;
-    if (scope.kind === "projects") where.projectId = { in: scope.projectIds };
-    return where;
+  private scopeWhere(scope: TicketScope): Prisma.TicketWhereInput {
+    if (scope.kind === "all") return { deletedAt: null };
+    const any: Prisma.TicketWhereInput[] = [];
+    if (scope.projectIds?.length) {
+      any.push({ projectId: { in: scope.projectIds } });
+    }
+    if (scope.companyIds?.length) {
+      any.push({ companyId: { in: scope.companyIds } });
+    }
+    if (scope.assigneeId !== undefined) {
+      any.push({ assignees: { some: { assigneeId: scope.assigneeId } } });
+    }
+    // No clause: the scope matches nothing.
+    return any.length > 0
+      ? { deletedAt: null, OR: any }
+      : { deletedAt: null, id: { in: [] } };
   }
 
   // Every assignee must be an existing engineer or SAP consultant.

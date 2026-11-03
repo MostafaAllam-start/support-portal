@@ -45,12 +45,12 @@ export default async function DashboardTicketDetailPage({
   const ticket = await ticketService.getDetail(ticketId);
   if (!ticket) notFound();
 
-  if (!(await canAccessDashboardTicket(user, ticket))) {
+  if (!canAccessDashboardTicket(user, ticket)) {
     notFound();
   }
 
-  const isEngineer = user.role.name === "software-engineer";
-  const isConsultant = user.role.name === "sap-consultant";
+  const isEngineer = user.effectiveRole === "software-engineer";
+  const isConsultant = user.effectiveRole === "sap-consultant";
 
   const t = await getTranslations("Tickets");
   const created = ticket.createdAt.toISOString().slice(0, 10);
@@ -61,16 +61,16 @@ export default async function DashboardTicketDetailPage({
   const attachmentsByReply = await replyAttachmentsMap(replies);
   const attachmentsByReport = await reportAttachmentsMap(ticket.reports);
   // Admins land here from the Issues queue; engineers/reviewers from Tickets.
-  const backHref = user.role.name === "admin" ? "/dashboard/issues" : "/dashboard/tickets";
+  const backHref = user.effectiveRole === "admin" ? "/dashboard/issues" : "/dashboard/tickets";
 
-  const canChangeStatus = canChangeTicketStatus(user.role.name);
+  const canChangeStatus = canChangeTicketStatus(user.effectiveRole);
   const isAssigned = ticket.assignees.some(
     (assignee) => assignee.assignee.id === user.id,
   );
   const canAddReport = (isEngineer || isConsultant) && isAssigned;
   const canReply =
-    !isEngineer && !isConsultant && (await canReplyToTicket(user, ticket));
-  const canReplyToReports = await canReplyToReport(user, ticket);
+    !isEngineer && !isConsultant && canReplyToTicket(user, ticket);
+  const canReplyToReports = canReplyToReport(user, ticket);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -178,7 +178,7 @@ export default async function DashboardTicketDetailPage({
       <TicketReplies
         ticketId={ticket.id}
         currentUserId={user.id}
-        currentUserRole={user.role.name}
+        currentUserRole={user.effectiveRole}
         replies={replies}
         attachmentsByReply={attachmentsByReply}
         canReply={canReply}
@@ -190,7 +190,7 @@ export default async function DashboardTicketDetailPage({
         attachmentsByReport={attachmentsByReport}
         canReplyToReport={canReplyToReports}
         currentUserId={user.id}
-        currentUserRole={user.role.name}
+        currentUserRole={user.effectiveRole}
       />
     </div>
   );

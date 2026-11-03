@@ -35,13 +35,24 @@ async function adminUserIds(): Promise<number[]> {
   return userService.activeAdminIds();
 }
 
-// All admins + project manager + members with manager/reviewer role.
-// Engineers and consultants are never included. ECM tickets (no project) → admins only.
+// The reviewers of the ticket's company: they see every ticket of their company,
+// including ECM tickets, which carry no project.
+async function companyReviewerIds(ticketId?: number): Promise<number[]> {
+  if (ticketId == null) return [];
+  const companyId = await ticketService.companyIdOf(ticketId);
+  return companyId == null ? [] : userService.reviewerIdsForCompany(companyId);
+}
+
+// All admins + project manager + members with manager/reviewer role + the
+// reviewers of the ticket's company. Engineers and consultants are never
+// included.
 export async function projectStaffUserIds(
   projectId: number | null,
+  ticketId?: number,
 ): Promise<number[]> {
   const ids = await adminUserIds();
-  if (projectId == null) return ids;
+  ids.push(...(await companyReviewerIds(ticketId)));
+  if (projectId == null) return uniqueIds(ids);
 
   const managerId = await projectService.managerUserId(projectId);
   if (managerId != null) ids.push(managerId);
@@ -55,12 +66,14 @@ export async function projectStaffUserIds(
   return uniqueIds(ids);
 }
 
-// Project manager + project reviewers (+ admins for visibility).
+// Project manager + project and company reviewers (+ admins for visibility).
 export async function managersAndReviewersUserIds(
   projectId: number | null,
+  ticketId?: number,
 ): Promise<number[]> {
   const ids = await adminUserIds();
-  if (projectId == null) return ids;
+  ids.push(...(await companyReviewerIds(ticketId)));
+  if (projectId == null) return uniqueIds(ids);
 
   const managerId = await projectService.managerUserId(projectId);
   if (managerId != null) ids.push(managerId);
@@ -158,7 +171,8 @@ export async function reportReplyRecipientIds(
   reportId: number,
   parentReplyId?: number | null,
 ): Promise<number[]> {
-  const ids = await managersAndReviewersUserIds(projectId);
+  const ticketId = await ticketService.reportTicketId(reportId);
+  const ids = await managersAndReviewersUserIds(projectId, ticketId ?? undefined);
 
   const authorId = await ticketService.reportAuthorId(reportId);
   if (authorId != null) ids.push(authorId);

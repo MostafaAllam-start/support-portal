@@ -5,6 +5,10 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/theme-provider";
+import {
+  NavigationSkeletonProvider,
+  PendingSkeleton,
+} from "@/components/navigation-skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import "../globals.css";
 
@@ -25,7 +29,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "ECM Support",
+  title: "ECM+ Support",
   description: "Ticketing and support workspace.",
   icons: {
     icon: [
@@ -92,7 +96,12 @@ export default async function LocaleLayout({
           disableTransitionOnChange
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
-            {children}
+            {/* The destination's skeleton shows the moment a navigation starts:
+                over the whole page for the customer pages, in the content area
+                for the dashboard (see its layout). */}
+            <NavigationSkeletonProvider>
+              <PendingSkeleton area="customer">{children}</PendingSkeleton>
+            </NavigationSkeletonProvider>
             <Toaster />
           </NextIntlClientProvider>
         </ThemeProvider>

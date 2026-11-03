@@ -37,13 +37,13 @@ export default async function TeamMembersPage({
   const t = await getTranslations("Dashboard");
 
   const [members, users] = await Promise.all([
-    userService.teamMembers(),
+    userService.featured(),
     userService.list(),
   ]);
 
   // Candidates for the "add" picker: active users not already on the team.
   const candidates = users
-    .filter((user) => !user.isTeamMember && !user.isDisabled)
+    .filter((user) => !user.isFeatured && !user.isDisabled)
     .map((user) => ({ id: user.id, name: user.name }));
 
   return (
@@ -92,7 +92,7 @@ export default async function TeamMembersPage({
                   <TableCell className="font-medium">
                     {member.name}
                     <span className="ms-2 text-xs text-muted-foreground">
-                      @{member.username}
+                      {member.username}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

@@ -12,6 +12,8 @@ export {
   notificationService,
 } from "@/notifications/notificationService";
 export { CompanyService, companyService } from "./company-service";
+export { ScopeService, scopeService, scopeFieldsSchema } from "./scope-service";
+export type { ScopeInput, ScopeWithCompanies } from "./scope-service";
 export { ProjectService, projectService } from "./project-service";
 export {
   UserProjectService,
@@ -20,11 +22,13 @@ export {
 export { EmailService, emailService } from "./email-service";
 export { SiteRequestService, siteRequestService } from "./site-request-service";
 export {
+  createContactRequestSchema,
   createSiteRequestSchema,
   siteRequestModuleValues,
   siteRequestStatusValues,
 } from "./site-request-service";
 export type {
+  CreateContactRequestInput,
   CreateSiteRequestInput,
   ManualSiteRequestStatus,
   SiteRequest,
@@ -106,6 +110,7 @@ export type {
 export { userProjectSchema } from "./user-project-service";
 
 export type {
+  ProjectMembershipInput,
   UserProjectInput,
   UserProject,
 } from "./user-project-service";

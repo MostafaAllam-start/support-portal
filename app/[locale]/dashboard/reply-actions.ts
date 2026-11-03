@@ -57,7 +57,7 @@ function revalidateReport(ticketId: number) {
 }
 
 function canModifyReply(user: AuthUser, reply: { userId: number }): boolean {
-  return reply.userId === user.id || user.role.name === "admin";
+  return reply.userId === user.id || user.effectiveRole === "admin";
 }
 
 async function loadModifiableReply(
@@ -102,7 +102,7 @@ export async function postComplaintReplyAction(
   const ticket = await ticketService.getDetail(complaint.ticketId);
   if (!ticket) return { error: "Ticket not found" };
 
-  if (!(await canReplyToComplaint(user, ticket))) {
+  if (!canReplyToComplaint(user, ticket)) {
     return { error: "You can't reply to this complaint." };
   }
 
@@ -205,7 +205,7 @@ export async function postReportReplyAction(
   const report = ticket.reports.find((item) => item.id === reportId);
   if (!report) return { error: "Report not found" };
 
-  if (!(await canReplyToReport(user, ticket))) {
+  if (!canReplyToReport(user, ticket)) {
     return { error: "You can't reply to this report." };
   }
 

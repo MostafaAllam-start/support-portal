@@ -6,8 +6,10 @@
 # source for hot reload, and enables file-watch polling (required on Windows,
 # where bind-mounted filesystems do not emit inotify events so saves would
 # otherwise go unnoticed). The db service is inherited unchanged from the base.
-# Outgoing email is caught by Mailpit instead of being delivered — browse it at
-# http://localhost:8025.
+# With COMPOSE_PROFILES=mailpit in .env, Mailpit runs too and catches all outgoing
+# email instead of delivering it: browse it at http://localhost:8025. Without it,
+# email uses the SMTP_* settings in .env, like production; without SMTP_HOST either,
+# the web container prints each email (including generated passwords) to its log.
 services:
   web:
     build:
@@ -19,13 +21,12 @@ services:
       # Watch via polling instead of inotify (Windows bind mount).
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
-      # Route all mail to the local Mailpit inbox.
-      SMTP_HOST: mailpit
-      SMTP_PORT: "1025"
-      MAIL_FROM: "Support Portal <no-reply@support.local>"
       APP_URL: "http://localhost:3000"
     depends_on:
-      - mailpit
+      mailpit:
+        condition: service_started
+        # Only there when COMPOSE_PROFILES=mailpit.
+        required: false
     volumes:
       # Live source from the host...
       - .:/app
@@ -45,6 +46,8 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: ticketing-mailpit
+    profiles:
+      - mailpit
     ports:
       - "8025:8025" # web inbox
       - "1025:1025" # SMTP

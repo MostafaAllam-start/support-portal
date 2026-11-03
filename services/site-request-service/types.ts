@@ -4,11 +4,13 @@ import type {
   SiteRequestStatus,
 } from "@/app/generated/prisma/client";
 import type {
+  createContactRequestSchema,
   createSiteRequestSchema,
   manualSiteRequestStatusSchema,
 } from "./schemas";
 
 export type CreateSiteRequestInput = z.input<typeof createSiteRequestSchema>;
+export type CreateContactRequestInput = z.input<typeof createContactRequestSchema>;
 export type ManualSiteRequestStatus = z.infer<typeof manualSiteRequestStatusSchema>;
 
 export type { SiteRequest, SiteRequestStatus };

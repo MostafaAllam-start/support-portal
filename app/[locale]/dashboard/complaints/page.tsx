@@ -25,9 +25,9 @@ export default async function ComplaintsPage({
   // Admin sees every complaint; a manager only sees complaints on tickets that
   // belong to the project(s) they manage.
   const complaints =
-    user.role.name === "admin"
+    user.effectiveRole === "admin"
       ? await complaintService.list()
-      : await complaintService.forProjects(await managedProjectIds(user));
+      : await complaintService.forProjects(managedProjectIds(user));
 
   return (
     <div className="space-y-6">

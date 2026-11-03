@@ -8,6 +8,7 @@ import {
   FolderKanban,
   Handshake,
   Inbox,
+  Layers,
   Lightbulb,
   LogOut,
   MessageSquareWarning,
@@ -43,11 +44,14 @@ import { logoutAction } from "../actions";
 
 type NavItem = { href: string; key: string; icon: LucideIcon };
 
-// Sidebar sections per role.
+// Sidebar sections per effective role (account type, or a team member's project
+// role). Each list matches what the pages let that role open; a support team
+// member also gets the Requests page (see REQUESTS_ITEM).
 const NAV: Record<string, NavItem[]> = {
   admin: [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
     { href: "/dashboard/companies", key: "companies", icon: Building2 },
+    { href: "/dashboard/scopes", key: "scopes", icon: Layers },
     { href: "/dashboard/projects", key: "projects", icon: FolderKanban },
     { href: "/dashboard/users", key: "users", icon: Users },
     { href: "/dashboard/issues", key: "issues", icon: Inbox },
@@ -61,23 +65,24 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/dashboard/team-members", key: "teamMembers", icon: Contact },
     { href: "/dashboard/partners", key: "partners", icon: Handshake },
   ],
-  // System support works only the branding-site requests.
-  "system-support": [
-    { href: "/dashboard/requests", key: "requests", icon: ClipboardList },
-  ],
+  // Engineers work the tickets assigned to them, in any company.
   "software-engineer": [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
     { href: "/dashboard/tickets", key: "myTickets", icon: Ticket },
   ],
+  // Reviewers see every ticket of their company.
   reviewer: [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
-    { href: "/dashboard/tickets", key: "reportedTickets", icon: Ticket },
+    { href: "/dashboard/tickets", key: "companyTickets", icon: Ticket },
   ],
-  // Consultants view tickets to add diagnostic reports (no management actions).
+  // Consultants see their company's tickets and add diagnostic reports to the
+  // ones assigned to them (no management actions).
   "sap-consultant": [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
-    { href: "/dashboard/tickets", key: "reportedTickets", icon: Ticket },
+    { href: "/dashboard/tickets", key: "companyTickets", icon: Ticket },
   ],
+  // Managers run their projects: tickets, complaints, suggestions, and the
+  // branding-site requests.
   manager: [
     { href: "/dashboard/kpis", key: "kpis", icon: BarChart3 },
     { href: "/dashboard/tickets", key: "projectTickets", icon: Ticket },
@@ -86,7 +91,17 @@ const NAV: Record<string, NavItem[]> = {
       key: "complaints",
       icon: MessageSquareWarning,
     },
+    { href: "/dashboard/suggestions", key: "suggestions", icon: Lightbulb },
+    { href: "/dashboard/requests", key: "requests", icon: ClipboardList },
   ],
+  // A team member without a project role yet.
+  "team-member": [{ href: "/dashboard/kpis", key: "kpis", icon: BarChart3 }],
+};
+
+const REQUESTS_ITEM: NavItem = {
+  href: "/dashboard/requests",
+  key: "requests",
+  icon: ClipboardList,
 };
 
 function initials(name: string) {
@@ -101,16 +116,23 @@ function initials(name: string) {
 
 export function DashboardSidebar({
   role,
+  showsRequests = false,
   user,
   side = "left",
 }: {
   role: string;
+  // Whether the user works the branding-site requests (admins, managers, support).
+  showsRequests?: boolean;
   user: { name: string; username: string; image: string | null };
   side?: "left" | "right";
 }) {
   const t = useTranslations("Dashboard");
   const pathname = usePathname();
-  const items = NAV[role] ?? [];
+  const base = NAV[role] ?? [];
+  const items =
+    showsRequests && !base.some((item) => item.href === REQUESTS_ITEM.href)
+      ? [...base, REQUESTS_ITEM]
+      : base;
 
   return (
     <Sidebar side={side}>
@@ -168,7 +190,7 @@ export function DashboardSidebar({
                   <div className="grid flex-1 text-start text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
                     <span className="truncate text-xs text-muted-foreground">
-                      @{user.username}
+                      {user.username}
                     </span>
                   </div>
                 </SidebarMenuButton>

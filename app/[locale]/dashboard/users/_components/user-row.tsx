@@ -19,10 +19,14 @@ export type UserDetails = {
   username: string;
   email: string;
   image: string | null;
-  role: string;
+  // The account type's display name, and a team member's project roles.
+  type: string;
+  projectRoles: string[];
+  // The names of the scopes (CTC, ECM, …) a team member or client holds.
+  scopes: string[];
   jobTitle: string | null;
   isDisabled: boolean;
-  isTeamMember: boolean;
+  isFeatured: boolean;
   hasContactInfoCard: boolean;
   companies: { id: number; name: string }[];
 };
@@ -87,7 +91,7 @@ export function UserRow({
             <div>
               <div className="font-medium">{details.name}</div>
               <div className="text-xs text-muted-foreground">
-                @{details.username}
+                {details.username}
               </div>
             </div>
           </div>
@@ -95,8 +99,30 @@ export function UserRow({
           <div className="divide-y rounded-lg border px-3">
             <DetailRow label={t("users.email")}>{details.email}</DetailRow>
             <DetailRow label={t("users.role")}>
-              <Badge variant="outline">{details.role}</Badge>
+              <Badge variant="outline">{details.type}</Badge>
             </DetailRow>
+            {details.projectRoles.length > 0 && (
+              <DetailRow label={t("users.projectRolesLabel")}>
+                <span className="flex flex-wrap justify-end gap-1">
+                  {details.projectRoles.map((name) => (
+                    <Badge key={name} variant="secondary">
+                      {name}
+                    </Badge>
+                  ))}
+                </span>
+              </DetailRow>
+            )}
+            {details.scopes.length > 0 && (
+              <DetailRow label={t("users.form.scope")}>
+                <span className="flex flex-wrap gap-1">
+                  {details.scopes.map((name) => (
+                    <Badge key={name} variant="outline">
+                      {name}
+                    </Badge>
+                  ))}
+                </span>
+              </DetailRow>
+            )}
             <DetailRow label={t("users.details.jobTitle")}>
               {details.jobTitle ?? t("users.details.none")}
             </DetailRow>
@@ -120,8 +146,8 @@ export function UserRow({
                 t("users.details.none")
               )}
             </DetailRow>
-            <DetailRow label={t("users.details.teamMember")}>
-              {details.isTeamMember
+            <DetailRow label={t("users.details.featured")}>
+              {details.isFeatured
                 ? t("users.details.yes")
                 : t("users.details.no")}
             </DetailRow>

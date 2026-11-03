@@ -111,7 +111,8 @@
       "sap-consultant": "SAP Consultant",
       "manager": "Project Manager",
       "admin": "Administrator",
-      "user": "Reporter"
+      "client": "Reporter",
+      "team-member": "Team member"
     },
     "deleteConfirm": {
       "title": "Delete message",

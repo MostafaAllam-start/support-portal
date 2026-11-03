@@ -40,15 +40,14 @@ export default async function ComplaintDetailPage({
   const complaint = await complaintService.getDetail(complaintId);
   if (!complaint) notFound();
 
-  const isAdmin = user.role.name === "admin";
+  const isAdmin = user.effectiveRole === "admin";
   if (!isAdmin) {
     const projectId = complaint.ticket.projectId;
     if (projectId == null) notFound();
-    const managed = await managedProjectIds(user);
-    if (!managed.includes(projectId)) notFound();
+    if (!managedProjectIds(user).includes(projectId)) notFound();
   }
 
-  const canReply = await canReplyToComplaint(user, complaint.ticket);
+  const canReply = canReplyToComplaint(user, complaint.ticket);
   const [attachments, replies] = await Promise.all([
     attachmentService.forEntity("complaint", complaint.id),
     replyService.forEntity("complaint", complaint.id),
@@ -139,7 +138,7 @@ export default async function ComplaintDetailPage({
         entityForm={{ entityField: "entityId", entityId: complaint.id }}
         actions={complaintReplyActions}
         currentUserId={user.id}
-        currentUserRole={user.role.name}
+        currentUserRole={user.effectiveRole}
         replies={replies}
         attachmentsByReply={attachmentsByReply}
         canReply={canReply}

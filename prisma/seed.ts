@@ -4,6 +4,7 @@ import { seedRoles } from "./seeding/roles";
 import { seedUsers } from "./seeding/users";
 import { seedCompanies } from "./seeding/companies";
 import { seedSampleUsers } from "./seeding/sample-users";
+import { seedScopes } from "./seeding/scopes";
 import { seedProjects } from "./seeding/projects";
 import { seedTickets } from "./seeding/tickets";
 import { seedReplies } from "./seeding/replies";
@@ -12,8 +13,8 @@ import { seedFeedback } from "./seeding/feedback";
 import { seedPartners } from "./seeding/partners";
 import { seedSiteRequests } from "./seeding/site-requests";
 
-// Orchestrates the individual seeders in dependency order: roles and companies
-// first, then the users that reference them, then projects (with managers and
+// Orchestrates the individual seeders in dependency order: roles, companies and
+// the company scopes first, then the users that reference them, then projects (with managers and
 // members), tickets, replies, diagnostic reports, and feedback
 // (suggestions/complaints) for the dashboard and user views, the public-facing
 // team members and partners shown on the landing page, and finally the demo
@@ -22,7 +23,8 @@ async function main() {
   const roles = await seedRoles(prisma);
   const companies = await seedCompanies(prisma);
   await seedUsers(prisma);
-  const sampleUsers = await seedSampleUsers(prisma, companies);
+  const scopes = await seedScopes(prisma, companies);
+  const sampleUsers = await seedSampleUsers(prisma, companies, scopes);
   const projects = await seedProjects(prisma, companies, sampleUsers, roles);
   await seedTickets(prisma, sampleUsers, projects);
   await seedReplies(prisma, sampleUsers);

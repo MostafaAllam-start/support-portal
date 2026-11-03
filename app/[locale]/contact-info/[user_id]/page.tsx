@@ -29,7 +29,7 @@ export async function generateMetadata({
   const contact = await getContact(id);
   if (!contact) return {};
   return {
-    title: `${contact.name} · ECM Support`,
+    title: `${contact.name} · ECM+ Support`,
     description: contact.jobTitle ?? undefined,
   };
 }

@@ -4,16 +4,18 @@
     "users": "Users",
     "roles": "Roles",
     "issues": "Issues",
-    "teamMembers": "Team Members",
+    "teamMembers": "Our Team",
     "partners": "Partners",
     "companies": "Companies",
+    "scopes": "Scopes",
     "projects": "Projects",
     "complaints": "Complaints",
     "suggestions": "Suggestions",
     "myTickets": "My Tickets",
     "reportedTickets": "Reported Tickets",
     "projectTickets": "Project Tickets",
-    "requests": "Requests"
+    "requests": "Requests",
+    "companyTickets": "Company Tickets"
   },
   "kpis": {
     "title": "KPIs",
@@ -59,33 +61,24 @@
       "hint": "Double-click a row to see full details.",
       "jobTitle": "Job title",
       "companies": "Companies",
-      "teamMember": "Team member",
       "contactCard": "Contact card",
       "yes": "Yes",
       "no": "No",
-      "none": "—"
+      "none": "—",
+      "featured": "On the landing team"
     },
     "form": {
       "addTitle": "Create user",
       "editTitle": "Edit user",
-      "description": "Accounts that can sign in to the workspace.",
+      "description": "Choose the account type first; the form shows only what that type needs.",
       "name": "Name",
       "username": "Username",
       "email": "Email",
       "emailHint": "The username and a generated password will be emailed to this address.",
-      "admin": "Administrator",
-      "adminHint": "Full access to every company and all management.",
-      "adminLocked": "The default admin can't be demoted.",
-      "dashboard": "Dashboard access",
-      "dashboardHint": "Allow this user to open the staff dashboard.",
       "jobTitle": "Job title",
-      "company": "Company",
-      "companyNone": "No company",
       "website": "Website",
       "whatsapp": "WhatsApp",
       "linkedin": "LinkedIn",
-      "teamMember": "Team member",
-      "teamMemberHint": "Feature this user on their company's landing page.",
       "contactCard": "Contact card",
       "contactCardHint": "Publish a public contact card for this user.",
       "image": "Photo",
@@ -107,10 +100,50 @@
         "usernameTaken": "This username is already taken",
         "emailRegistered": "This email is already registered",
         "emailNotConfigured": "Email delivery isn't configured, so the new user's login details can't be sent. Configure SMTP and try again.",
-        "credentialsEmailFailed": "The login details couldn't be emailed, so the user was not created. Check the email address and try again."
+        "credentialsEmailFailed": "The login details couldn't be emailed, so the user was not created. Check the email address and try again.",
+        "typeInvalid": "Choose an account type",
+        "membershipInvalid": "Choose a project and a role on every row",
+        "membershipDuplicate": "Each project can be added once",
+        "scopeRequired": "Choose at least one scope",
+        "companyOutsideScope": "Choose a main company from the scopes' companies",
+        "projectOutsideScope": "Each project must belong to a company in the scopes"
       },
-      "systemSupport": "System support",
-      "systemSupportHint": "Works the website requests and sees only the Requests page."
+      "create": "Create user",
+      "optional": "(optional)",
+      "typeLocked": "The default admin always stays an administrator.",
+      "typeSelf": "You can't change your own account type.",
+      "featured": "Show on the landing team",
+      "featuredHint": "Feature this user in their company's Our Team section.",
+      "sections": {
+        "type": "Account type",
+        "account": "Sign-in details",
+        "access": "Access",
+        "profile": "Profile and public page",
+        "profileOnly": "Profile"
+      },
+      "memberships": {
+        "title": "Project roles",
+        "project": "Project",
+        "projectPlaceholder": "Select a project",
+        "role": "Role",
+        "rolePlaceholder": "Select a role",
+        "add": "Add project",
+        "remove": "Remove",
+        "empty": "No project roles yet. Without one, the team member only sees the KPIs page.",
+        "needsScope": "Choose at least one scope first; the projects come from its companies."
+      },
+      "scope": "Scopes",
+      "scopeHint": {
+        "team_member": "Tick one or more: the companies they work with. Reviewers and SAP consultants see these companies' tickets; project roles come from these companies' projects.",
+        "client": "Tick one or more: the scopes this client belongs to. With more than one, they switch between them in the header."
+      },
+      "mainCompany": "Main company",
+      "mainCompanyHint": "The company they appear under, such as on the landing team.",
+      "support": "Support",
+      "supportHint": "Works the website's demo requests: adds the Requests page to their dashboard.",
+      "clientCompany": "Company",
+      "clientCompanyAuto": "Automatic: the first of their scopes",
+      "clientCompanyHint": "The company they start in. They switch between their scopes in the header."
     },
     "toast": {
       "created": "User created. Their login details were emailed to them.",
@@ -126,6 +159,30 @@
       "cancel": "Cancel",
       "disable": "Disable",
       "enable": "Enable"
+    },
+    "projectRolesLabel": "Project roles",
+    "types": {
+      "admin": {
+        "label": "Administrator",
+        "description": "Full access to every company and all management.",
+        "accessHint": ""
+      },
+      "team_member": {
+        "label": "Team member",
+        "description": "Staff. What they see on the dashboard follows from their company and project roles.",
+        "accessHint": "Managers see their projects' tickets, complaints, suggestions and requests; reviewers and SAP consultants their scopes' tickets; engineers the tickets assigned to them. Support adds the Requests page."
+      },
+      "client": {
+        "label": "Client",
+        "description": "Reports tickets, complaints and suggestions. No dashboard.",
+        "accessHint": "A client sees only their own tickets, complaints and suggestions, under the companies of their scopes."
+      }
+    },
+    "projectRoles": {
+      "manager": "Project manager",
+      "reviewer": "Reviewer",
+      "sap-consultant": "SAP consultant",
+      "software-engineer": "Software engineer"
     }
   },
   "roles": {
@@ -355,7 +412,7 @@
     "members": {
       "column": "Members",
       "title": "Members of {name}",
-      "description": "Reviewers and consultants assigned to this project.",
+      "description": "Team members assigned to this project with a role.",
       "empty": "No members yet.",
       "user": "User",
       "userPlaceholder": "Select a user",
@@ -377,7 +434,9 @@
       "created": "Project added.",
       "updated": "Project updated.",
       "deleted": "Project deleted."
-    }
+    },
+    "teamMemberOnly": "Only team members can manage a project or hold a project role.",
+    "outsideScope": "This team member's scopes don't include the project's company."
   },
   "complaints": {
     "heading": "Complaints",
@@ -460,7 +519,9 @@
         "reviewer": "Reviewer",
         "manager": "Manager",
         "software-engineer": "Engineer",
-        "user": "User"
+        "client": "Client",
+        "team-member": "Team member",
+        "sap-consultant": "SAP Consultant"
       }
     }
   },
@@ -471,7 +532,7 @@
   },
   "requests": {
     "title": "Requests",
-    "subtitle": "Demo requests sent from the ECM+ website.",
+    "subtitle": "Demo requests from the ECM+ website and messages from the contact form.",
     "hint": "Double-click a row to see the full request.",
     "filterLabel": "Filter by status",
     "filterAll": "All",
@@ -508,7 +569,8 @@
       "adminNotifiedBy": "{date} by {name}",
       "message": "Message",
       "noMessage": "No message.",
-      "close": "Close"
+      "close": "Close",
+      "fromName": "From {name}"
     },
     "notify": {
       "title": "Notify admin to create a support account",
@@ -516,7 +578,8 @@
       "already": "An admin was already notified on {date} by {name}.",
       "cancel": "Cancel",
       "confirm": "Notify admin",
-      "again": "Notify again"
+      "again": "Notify again",
+      "descriptionNoOrganization": "Every admin gets an email and a real-time notification asking them to create a support portal account for {name} ({email})."
     },
     "toast": {
       "updated": "Request updated.",
@@ -526,6 +589,13 @@
       "notFound": "This request no longer exists.",
       "noAdmins": "There is no other active admin to notify.",
       "invalid": "Invalid request."
+    },
+    "scope": "Scope",
+    "type": "Type",
+    "subject": "Subject",
+    "sourceNames": {
+      "demo": "Demo request",
+      "contact": "Contact form"
     }
   },
   "notifications": {
@@ -575,12 +645,63 @@
       },
       "accountRequested": {
         "title": "Support account requested: {organization}",
-        "details": "{actor} asks you to create a support portal account for {name} ({email}) from {organization}."
+        "details": "{actor} asks you to create a support portal account for {name} ({email}) from {organization}.",
+        "titleNoOrganization": "Support account requested: {name}",
+        "detailsNoOrganization": "{actor} asks you to create a support portal account for {name} ({email})."
+      },
+      "contactRequestSubmitted": {
+        "title": "New contact message from {name}",
+        "details": "{name} sent a message from the contact form."
       }
     }
   },
   "account": "Account",
   "logout": "Log out",
   "toggleSidebar": "Toggle sidebar",
-  "settings": "Settings"
+  "settings": "Settings",
+  "scopes": {
+    "title": "Scopes",
+    "subtitle": "The companies team members and clients work with; a user can hold one or more. They decide what a reviewer or consultant works on, and which companies a client belongs to.",
+    "name": "Name",
+    "companies": "Companies",
+    "users": "Users",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions",
+    "empty": "No scopes yet. They're created when the database is seeded.",
+    "inUse": "Users still have this scope. Take it off them first.",
+    "form": {
+      "editTitle": "Edit scope",
+      "description": "A scope names one or more companies.",
+      "name": "Name",
+      "namePlaceholder": "e.g. CTC",
+      "companies": "Companies",
+      "companiesHint": "Users with this scope work with every company ticked here.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "nameRequired": "Name is required",
+        "nameTaken": "Another scope already has this name",
+        "companiesRequired": "Choose at least one company",
+        "logoRequired": "Add a logo"
+      },
+      "logo": "Logo",
+      "logoHint": "Drag & drop an image here, or click to browse",
+      "logoTypes": "PNG, JPG, WEBP or GIF · up to 5 MB",
+      "logoRemove": "Remove image"
+    },
+    "deleteConfirm": {
+      "title": "Delete scope",
+      "description": "{name} will be deleted. No user has it.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "deleting": "Deleting…"
+    },
+    "toast": {
+      "updated": "Scope updated.",
+      "deleted": "Scope deleted."
+    },
+    "logo": "Logo"
+  }
 }

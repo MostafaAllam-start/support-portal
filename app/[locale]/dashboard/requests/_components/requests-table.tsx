@@ -49,10 +49,15 @@ type Status = "new" | "contacted" | "admin_notified" | "closed";
 
 export type RequestItem = {
   id: number;
+  // Which form it came from; a contact message has no organization or modules.
+  source: "demo" | "contact";
+  // The scope the visitor was browsing as, when they had picked one.
+  scope: string | null;
   name: string;
   email: string;
-  organization: string;
+  organization: string | null;
   modules: string[];
+  subject: string | null;
   message: string | null;
   status: Status;
   createdAt: string; // ISO
@@ -172,6 +177,7 @@ export function RequestsTable({
               <TableHead>{t("organization")}</TableHead>
               <TableHead>{t("email")}</TableHead>
               <TableHead>{t("modules")}</TableHead>
+              <TableHead>{t("scope")}</TableHead>
               <TableHead>{t("statusLabel")}</TableHead>
               <TableHead className="w-12" />
             </TableRow>
@@ -179,7 +185,7 @@ export function RequestsTable({
           <TableBody>
             {visible.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                   {t("empty")}
                 </TableCell>
               </TableRow>
@@ -193,8 +199,21 @@ export function RequestsTable({
                   <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
                     {formatDate(request.createdAt)}
                   </TableCell>
-                  <TableCell className="font-medium">{request.name}</TableCell>
-                  <TableCell>{request.organization}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      {request.name}
+                      {request.source === "contact" && (
+                        <Badge variant="outline" className="font-normal">
+                          {t("sourceNames.contact")}
+                        </Badge>
+                      )}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {request.organization ?? (
+                      <span className="text-muted-foreground">{t("none")}</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <a
                       href={`mailto:${request.email}`}
@@ -206,6 +225,9 @@ export function RequestsTable({
                   </TableCell>
                   <TableCell>
                     <ModuleBadges modules={request.modules} />
+                  </TableCell>
+                  <TableCell>
+                    <ScopeBadge scope={request.scope} />
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={request.status} />
@@ -258,6 +280,12 @@ function ModuleBadges({ modules }: { modules: string[] }) {
       ))}
     </span>
   );
+}
+
+function ScopeBadge({ scope }: { scope: string | null }) {
+  const t = useTranslations("Dashboard.requests");
+  if (!scope) return <span className="text-muted-foreground">{t("none")}</span>;
+  return <Badge variant="outline">{scope}</Badge>;
 }
 
 function RequestRowActions({
@@ -343,7 +371,12 @@ function RequestDetailsDialog({
             <DialogHeader>
               <DialogTitle>{t("details.title", { id: request.id })}</DialogTitle>
               <DialogDescription>
-                {t("details.from", { name: request.name, organization: request.organization })}
+                {request.organization
+                  ? t("details.from", {
+                      name: request.name,
+                      organization: request.organization,
+                    })
+                  : t("details.fromName", { name: request.name })}
               </DialogDescription>
             </DialogHeader>
 
@@ -357,12 +390,23 @@ function RequestDetailsDialog({
                     {request.email}
                   </a>
                 </DetailRow>
-                <DetailRow label={t("organization")}>{request.organization}</DetailRow>
-                <DetailRow label={t("modules")}>
-                  <span className="inline-flex justify-end">
-                    <ModuleBadges modules={request.modules} />
-                  </span>
+                <DetailRow label={t("type")}>{t(`sourceNames.${request.source}`)}</DetailRow>
+                <DetailRow label={t("scope")}>
+                  <ScopeBadge scope={request.scope} />
                 </DetailRow>
+                {request.organization && (
+                  <DetailRow label={t("organization")}>{request.organization}</DetailRow>
+                )}
+                {request.source === "demo" && (
+                  <DetailRow label={t("modules")}>
+                    <span className="inline-flex justify-end">
+                      <ModuleBadges modules={request.modules} />
+                    </span>
+                  </DetailRow>
+                )}
+                {request.subject && (
+                  <DetailRow label={t("subject")}>{request.subject}</DetailRow>
+                )}
                 <DetailRow label={t("received")}>{formatDateTime(request.createdAt)}</DetailRow>
                 {request.adminNotifiedAt && (
                   <DetailRow label={t("details.adminNotified")}>
@@ -431,11 +475,16 @@ function NotifyAdminDialog({
             <DialogHeader>
               <DialogTitle>{t("notify.title")}</DialogTitle>
               <DialogDescription>
-                {t("notify.description", {
-                  name: request.name,
-                  email: request.email,
-                  organization: request.organization,
-                })}
+                {request.organization
+                  ? t("notify.description", {
+                      name: request.name,
+                      email: request.email,
+                      organization: request.organization,
+                    })
+                  : t("notify.descriptionNoOrganization", {
+                      name: request.name,
+                      email: request.email,
+                    })}
               </DialogDescription>
             </DialogHeader>
             {request.adminNotifiedAt && (

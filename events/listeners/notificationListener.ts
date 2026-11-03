@@ -38,7 +38,7 @@ export function registerNotificationListeners(): void {
     const messages = await ticketNotificationMessages();
     const msg = messages.ticketCreated(data.title);
     const recipients = excludeActor(
-      await projectStaffUserIds(data.projectId),
+      await projectStaffUserIds(data.projectId, data.ticketId),
       data.actorId,
     );
     if (recipients.length === 0) return;
@@ -79,7 +79,7 @@ export function registerNotificationListeners(): void {
     const messages = await ticketNotificationMessages();
     const msg = messages.ticketStatusChanged(data.ticketId, data.status);
     const recipients = excludeActor(
-      await projectStaffUserIds(data.projectId),
+      await projectStaffUserIds(data.projectId, data.ticketId),
       data.actorId,
     );
     if (recipients.length === 0) return;
@@ -100,7 +100,7 @@ export function registerNotificationListeners(): void {
     // Notify staff about assignment change
     const staffMsg = messages.ticketAssigned(data.ticketId);
     const staffRecipients = excludeActor(
-      await projectStaffUserIds(data.projectId),
+      await projectStaffUserIds(data.projectId, data.ticketId),
       data.actorId,
     );
     if (staffRecipients.length > 0) {
@@ -174,7 +174,7 @@ export function registerNotificationListeners(): void {
     const messages = await ticketNotificationMessages();
     const msg = messages.ticketReportSubmitted(data.ticketId);
     const recipients = excludeActor(
-      await managersAndReviewersUserIds(data.projectId),
+      await managersAndReviewersUserIds(data.projectId, data.ticketId),
       data.actorId,
     );
     if (recipients.length === 0) return;
@@ -218,9 +218,11 @@ export function registerNotificationListeners(): void {
   // get them so a request never goes unseen.
   eventBus.on(DomainEventType.SITE_REQUEST_SUBMITTED, async (data: SiteRequestSubmittedPayload) => {
     const messages = await ticketNotificationMessages();
-    const msg = messages.siteRequestSubmitted(data.name, data.organization);
+    const msg = data.organization
+      ? messages.siteRequestSubmitted(data.name, data.organization)
+      : messages.contactRequestSubmitted(data.name);
     const { userService } = await import("@/services");
-    let recipients = await userService.activeSystemSupportIds();
+    let recipients = await userService.activeSupportIds();
     if (recipients.length === 0) recipients = await userService.activeAdminIds();
     if (recipients.length === 0) return;
 

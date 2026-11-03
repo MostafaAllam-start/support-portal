@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { siteRequestService, userService } from "@/services";
-import { requireRole } from "@/lib/auth/guards";
-import { UserRole } from "@/lib/auth/roles";
+import { requireRequestsAccess } from "@/lib/auth/guards";
 import { eventBus } from "@/events/eventBus";
 import { DomainEventType } from "@/events/eventTypes";
 
@@ -13,8 +12,6 @@ export type RequestActionState = {
   error?: string;
 };
 
-// System support works the requests; admins can act on them too.
-const REQUEST_ROLES = [UserRole.SystemSupport, UserRole.Admin];
 
 function readId(formData: FormData): number | null {
   const n = Number(formData.get("id"));
@@ -31,7 +28,7 @@ export async function notifyAdminAction(
   _prev: RequestActionState,
   formData: FormData,
 ): Promise<RequestActionState> {
-  const user = await requireRole(...REQUEST_ROLES);
+  const user = await requireRequestsAccess();
   const t = await getTranslations("Dashboard.requests.errors");
 
   const id = readId(formData);
@@ -61,7 +58,7 @@ export async function setRequestStatusAction(
   _prev: RequestActionState,
   formData: FormData,
 ): Promise<RequestActionState> {
-  await requireRole(...REQUEST_ROLES);
+  await requireRequestsAccess();
   const t = await getTranslations("Dashboard.requests.errors");
 
   const id = readId(formData);

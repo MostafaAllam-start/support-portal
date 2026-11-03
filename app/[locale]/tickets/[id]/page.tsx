@@ -56,7 +56,7 @@ export default async function TicketDetailPage({
           <TicketDetail
             ticketId={ticketId}
             userId={user.id}
-            userRole={user.role.name}
+            userRole={user.effectiveRole}
           />
         </Suspense>
       </main>

@@ -41,17 +41,17 @@
     "messagePlaceholder": "Tell us a bit more…"
   },
   "ecm": {
-    "heroTitle": "Resolve ECM issues, faster.",
-    "heroSubtitle": "ECM Support is your single workspace to report, track, and resolve ECM Business Suite issues — with the right people on every ticket.",
-    "aboutTitle": "About ECM Support",
-    "aboutBody": "We help teams keep their ECM Business Suite running smoothly. Report an issue, follow it through a clear workflow, and collaborate with engineers and reviewers until it is resolved.",
+    "heroTitle": "Resolve ECM+ issues, faster.",
+    "heroSubtitle": "ECM+ Support is your single workspace to report, track, and resolve ECM+ Business Suite issues — with the right people on every ticket.",
+    "aboutTitle": "About ECM+ Support",
+    "aboutBody": "We help teams keep their ECM+ Business Suite running smoothly. Report an issue, follow it through a clear workflow, and collaborate with engineers and reviewers until it is resolved.",
     "aboutPoint1": "Centralized issue tracking",
     "aboutPoint2": "Role-based workflows for engineers and reviewers",
     "aboutPoint3": "Clear visibility with live KPIs",
-    "teamSubtitle": "The people behind ECM Support.",
-    "partnersSubtitle": "Trusted by teams that rely on ECM.",
+    "teamSubtitle": "The people behind ECM+ Support.",
+    "partnersSubtitle": "Trusted by teams that rely on ECM+.",
     "footerTagline": "Support that keeps your team moving.",
-    "footerRights": "© ECM Support. All rights reserved."
+    "footerRights": "© ECM+ Support. All rights reserved."
   },
   "ctc": {
     "heroTitle": "Support for CTC's SAP projects.",

@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireRole } from "@/lib/auth/guards";
 import { ProjectRole, UserRole } from "@/lib/auth/roles";
+import { canAccessSuggestion } from "@/lib/suggestions";
 import { attachmentService, replyService, suggestionService } from "@/services";
 import { SuggestionReplies } from "../_components/suggestion-replies";
 import { LiveReplies } from "@/components/live-replies";
@@ -18,7 +19,7 @@ export default async function SuggestionDetailPage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const user = await requireRole(UserRole.Admin, ProjectRole.Manager);
+  const user = await requireRole(UserRole.admin, ProjectRole.Manager);
 
   const suggestionId = Number(id);
   if (!Number.isInteger(suggestionId)) notFound();
@@ -26,15 +27,7 @@ export default async function SuggestionDetailPage({
   const suggestion = await suggestionService.getDetail(suggestionId);
   if (!suggestion) notFound();
 
-  if (user.userRole !== UserRole.Admin) {
-    const projectIds = new Set([
-      ...user.managedProjectIds,
-      ...user.memberships.map((membership) => membership.projectId),
-    ]);
-    if (!suggestion.project || !projectIds.has(suggestion.project.id)) {
-      notFound();
-    }
-  }
+  if (!canAccessSuggestion(user, suggestion)) notFound();
 
   const t = await getTranslations("Dashboard");
   const created = suggestion.createdAt.toISOString().slice(0, 10);
@@ -139,7 +132,7 @@ export default async function SuggestionDetailPage({
       <SuggestionReplies
         suggestionId={suggestion.id}
         currentUserId={user.id}
-        canModerate={user.userRole === UserRole.Admin}
+        canModerate={user.effectiveRole === "admin"}
         replies={replies}
       />
     </div>

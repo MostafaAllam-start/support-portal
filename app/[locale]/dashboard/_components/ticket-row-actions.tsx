@@ -122,7 +122,7 @@ function AssigneeCheckboxes({
               </span>
             )}
             <span className="text-xs text-muted-foreground">
-              @{assignee.username}
+              {assignee.username}
             </span>
           </label>
         );

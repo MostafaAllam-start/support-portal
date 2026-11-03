@@ -1,7 +1,7 @@
 {
   "welcome": {
-    "platformName": "دعم ECM",
-    "tagline": "مساحة العمل الموحدة لدعم ECM Business Suite.",
+    "platformName": "دعم ECM+",
+    "tagline": "مساحة العمل الموحدة لدعم ECM+ Business Suite.",
     "intro": "مرحبًا — اطّلع على بيانات التواصل الخاصة بعضو الفريق واحفظها.",
     "getStarted": "عرض بطاقة التواصل"
   },
@@ -20,6 +20,6 @@
   },
   "footer": {
     "poweredBy": "بدعم من",
-    "team": "فريق دعم ECM"
+    "team": "فريق دعم ECM+"
   }
 }

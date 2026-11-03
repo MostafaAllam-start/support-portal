@@ -48,15 +48,18 @@ export type TicketTrendPoint = {
   closed: number;
 };
 
-// Scope for role-based KPI/listing queries:
+// Scope for role-based KPI/listing queries and detail-page checks:
 // - "all": admin (every ticket)
-// - "assigned": engineer (tickets assigned to them)
-// - "reported": tickets reported by a given user
-// - "projects": tickets in the given project id list
+// - "filter": tickets matching ANY of the given clauses — in one of the projects,
+//   belonging to one of the companies, or assigned to the user. A filter with no
+//   clauses matches nothing.
 export type TicketScope =
   | { kind: "all" }
-  | { kind: "assigned"; userId: number }
-  | { kind: "reported"; userId: number }
-  | { kind: "projects"; projectIds: number[] };
+  | {
+      kind: "filter";
+      projectIds?: number[];
+      companyIds?: number[];
+      assigneeId?: number;
+    };
 
 export type { Ticket, TicketReport, TicketStatus };

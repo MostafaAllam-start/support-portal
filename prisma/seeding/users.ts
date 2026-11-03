@@ -16,22 +16,21 @@ function adminConfig() {
 }
 
 // Seeds the default users. Currently the admin account: created with a
-// bcrypt-hashed password and flagged as the global admin (`isAdmin`). Idempotent
-// on `username`.
+// bcrypt-hashed password and the admin account type. Idempotent on `username`;
+// re-asserts the admin type on every run so the system can't be left without one.
 export async function seedUsers(prisma: PrismaClient): Promise<void> {
   const config = adminConfig();
   const passwordHash = await bcrypt.hash(config.password, BCRYPT_ROUNDS);
 
   const admin = await prisma.user.upsert({
     where: { username: config.username },
-    update: { isAdmin: true, canAccessDashboard: true },
+    update: { role: "admin" },
     create: {
       name: config.name,
       username: config.username,
       email: config.email,
       password: passwordHash,
-      isAdmin: true,
-      canAccessDashboard: true,
+      role: "admin",
       jobTitle: config.jobTitle,
     },
   });

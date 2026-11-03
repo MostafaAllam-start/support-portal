@@ -32,10 +32,17 @@ Both compose files read configuration from `.env`. The most important keys:
 | `SOCKET_PORT`                         | `realtime` service   | Port the Socket.IO server listens on (3001).                                            |
 | `NEXT_PUBLIC_APP_URL`                 | Web / realtime CORS  | Origin the browser loads the app from; also the CORS origin the realtime server allows. |
 | `NEXT_PUBLIC_SOCKET_URL`              | Browser              | Public URL of the realtime server (inlined into the client bundle).                     |
-| `SMTP_HOST` / `SMTP_PORT`             | Web (email)          | SMTP server for outgoing mail. Port defaults to `587`. **Required in production** — without it new users can't be created. |
+| `COMPOSE_PROFILES`                    | Compose (dev)        | `mailpit` runs [Mailpit](https://mailpit.axllent.org) with the dev stack and sends all mail to its inbox at http://localhost:8025. Empty: mail uses the `SMTP_*` settings. Production ignores it. |
+| `SMTP_HOST` / `SMTP_PORT`             | Web (email)          | SMTP server for outgoing mail (any provider; presets in [.env.example](.env.example)). Port defaults to `587`. **Required in production** — without it new users can't be created. |
 | `SMTP_SECURE`                         | Web (email)          | `true` for implicit TLS. Defaults to `true` on port 465, otherwise STARTTLS is used when the server offers it. |
+| `SMTP_REQUIRE_TLS`                    | Web (email)          | `true` to refuse sending unless the server upgrades to STARTTLS (recommended on 587). |
 | `SMTP_USER` / `SMTP_PASSWORD`         | Web (email)          | SMTP credentials. Leave unset for servers that don't require auth.                      |
-| `MAIL_FROM`                           | Web (email)          | Sender address, e.g. `Support Portal <no-reply@example.com>`. Falls back to `SMTP_USER`. |
+| `SMTP_AUTH` / `SMTP_OAUTH_*`          | Web (email)          | `SMTP_AUTH=oauth2` signs in with OAuth2 instead of a password (`SMTP_OAUTH_CLIENT_ID`, `_CLIENT_SECRET`, `_REFRESH_TOKEN`, `_TOKEN_URL`), e.g. for Microsoft 365. |
+| `SMTP_POOL_MAX`                       | Web (email)          | Pooled SMTP connections kept open (default `3`).                                      |
+| `SMTP_TLS_REJECT_UNAUTHORIZED`        | Web (email)          | `false` only for an internal relay with a self-signed certificate.                    |
+| `MAIL_FROM` / `MAIL_REPLY_TO`         | Web (email)          | Sender address, e.g. `Support Portal <no-reply@example.com>` (falls back to `SMTP_USER`), and an optional reply-to. |
+| `MAIL_RETRY_ATTEMPTS`                 | Web (email)          | Tries per message when the server says to retry later (default `3`).                  |
+| `MAIL_DEBUG`                          | Web (email)          | `true` logs the SMTP conversation, for troubleshooting.                               |
 | `APP_URL`                             | Web (email)          | Public origin used for links in emails, e.g. `https://support.example.com`. Read at runtime (falls back to `NEXT_PUBLIC_APP_URL`). |
 | `MAIL_NOTIFICATIONS`                  | Web (email)          | Set to `false` to stop mirroring in-app notifications by email. Account emails are always sent. |
 
@@ -49,7 +56,9 @@ Every user can change their name, email, password and photo from their account s
 
 In-app notifications (new tickets, replies, status changes, assignments, …) are also sent by email to each recipient when SMTP is configured.
 
-Without `SMTP_HOST`, development builds print outgoing emails (including generated passwords) to the server log instead of sending them; production refuses to create users until SMTP is configured. The dev compose override routes all mail to [Mailpit](https://mailpit.axllent.org) — open [http://localhost:8025](http://localhost:8025) to read it.
+Mail goes out through any SMTP provider: Gmail or Google Workspace, Microsoft 365, Amazon SES, Brevo, or your company's relay. Copy [.env.example](.env.example) to `.env` and fill in the block for your provider. The app keeps a small pool of connections, checks the server and credentials once at startup (look for `[EmailService] SMTP ready` or `SMTP check failed` in the web container's log), and retries a message when the server says to try again later. Use a sender address on a domain you control, with SPF and DKIM set up at your provider, so the mail isn't marked as spam.
+
+In development, `COMPOSE_PROFILES=mailpit` in `.env` catches all mail in Mailpit at http://localhost:8025 instead of delivering it; re-run `docker compose ... up -d` after changing it. Without Mailpit and without `SMTP_HOST`, development builds print outgoing emails (including generated passwords) to the server log instead of sending them; production refuses to create users until SMTP is configured.
 
 ## Branding site and demo requests
 
@@ -69,7 +78,31 @@ The site's pages are generated, not hand-edited. To pick up template changes, ch
 pnpm site:import ../ecmplus-website-templates
 ```
 
-**System support** is a global role (a checkbox on the user form, like Administrator). A system-support user's dashboard shows only **Requests**: every demo request sent from the site, which they can filter by status, open for details, mark as contacted, close or reopen. When a request comes from a new client who needs a support account, **Notify admin** sends every admin an in-app notification over Socket.IO and an email (even with `MAIL_NOTIFICATIONS=false`) asking them to create the account. New requests notify the system-support users, or the admins if there are none. Admins see the Requests page too. The seed adds a sample system-support account, `support1`.
+A **support** team member (the **Support** option on the user form) gets the **Requests** page in their dashboard: every demo request sent from the site and every message from the landing page's contact form, each with the scope the visitor was browsing as, which they can filter by status, open for details, mark as contacted, close or reopen. When a request comes from a new client who needs a support account, **Notify admin** sends every admin an in-app notification over Socket.IO and an email (even with `MAIL_NOTIFICATIONS=false`) asking them to create the account. New requests notify the support team members, or the admins if there are none. Admins and project managers see the Requests page too. The seed adds a sample support team member, `support1`, who has no project role and so lands on the Requests page.
+
+## Account types and access
+
+Every account has one type (`User.role`), chosen first on the user form:
+
+| Type | Opens | Sees |
+| ---- | ----- | ---- |
+| **Admin** | Dashboard | Everything: every company, users, projects, partners, the landing team. |
+| **Team member** | Dashboard | What their scopes and project roles give them (below), plus the **Requests** page with the **Support** option. |
+| **Client** | Customer pages | Their own tickets, complaints and suggestions, under the companies of their scopes. No dashboard. |
+
+Team members and clients each hold one or more **scopes**: sets of companies with a name and a logo, managed by admins on **Dashboard → Scopes**. Visitors choose a scope before anything else, and the public pages follow it. The seed creates **CTC** and **ECM+** once; a user who works with both companies holds both. Admins can rename a scope, change its companies, or delete one nobody holds, but not add more. A team member also has a **main company** among their scopes' companies: the company they appear under on the landing team. A client is defined by their scopes alone, and every client must hold at least one (the seed adds a database trigger once no client is left without a scope): a client with several scopes switches between them in the header, and their new tickets go to the scope's company.
+
+Team members hold project roles, set on the user form (or on a project's **Members**). Their most senior role decides what they see:
+
+| Project role | Dashboard |
+| ------------ | --------- |
+| **Manager** | KPIs, the tickets and complaints of the projects they manage, those projects' suggestions plus their companies' company-wide ones, and the requests. Can create, edit, assign, close and delete tickets. |
+| **Reviewer** | KPIs and every ticket of the companies in their scopes (ECM+ tickets have no project). Can assign, change status and reply. |
+| **SAP consultant** | KPIs and every ticket of the companies in their scopes; adds diagnostic reports to the tickets assigned to them. |
+| **Software engineer** | KPIs and the tickets assigned to them, in any company; adds diagnostic reports to them. |
+| none yet | KPIs only. |
+
+Only team members can manage a project or hold a project role, and only on projects of a company in their scopes. Changing a team member to another type removes their project roles. The default admin always stays an admin, and an admin can't change their own type.
 
 ## Running in production
 
@@ -79,7 +112,7 @@ The base [docker-compose.yml](docker-compose.yml) is a **production build**: the
 docker compose up --build -d
 ```
 
-This builds and starts all three services. On startup the `web` container's entrypoint ([docker-entrypoint.sh](docker-entrypoint.sh)) waits for the database, applies the schema (`prisma db push`), seeds the admin account, then runs `pnpm start`.
+This builds and starts all three services. On startup the `web` container's entrypoint ([docker-entrypoint.sh](docker-entrypoint.sh)) waits for the database, runs the one-off data upgrades in [prisma/migrations](prisma/migrations) that `db push` can't do on its own (such as moving the old role flags to the account type), applies the schema (`prisma db push`), seeds the admin account, then runs `pnpm start`.
 
 Open [http://localhost:3000](http://localhost:3000).
 
