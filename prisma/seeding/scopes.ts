@@ -52,7 +52,7 @@ export async function seedScopes(
   const unscoped = await prisma.user.findMany({
     where: {
       scopes: { none: {} },
-      role: { in: ["team_member", "client"] },
+      role: { in: ["team_member", "client", "partner"] },
       companyId: { not: null },
     },
     select: { id: true, companyId: true },

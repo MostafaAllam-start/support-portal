@@ -58,6 +58,7 @@ export type {
   TicketScope,
   TicketTrendPoint,
   CompanyTicketStats,
+  ScopeTicketStats,
   ProjectTicketStats,
   TicketReport,
 } from "./ticket-service";

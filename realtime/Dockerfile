@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install dependencies using pnpm
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 RUN npm install -g pnpm && pnpm install
 
 # Copy code

@@ -12,6 +12,7 @@ export const USER_ROLES = [
   UserRole.admin,
   UserRole.team_member,
   UserRole.client,
+  UserRole.partner,
 ] as const;
 
 // Whether a value is one of the account types (for form input).
@@ -58,7 +59,9 @@ export function effectiveRoleName(input: RoleDerivation): EffectiveRole {
   switch (input.role) {
     case UserRole.admin:
       return "admin";
+    // A partner account has a client's authorizations.
     case UserRole.client:
+    case UserRole.partner:
       return "client";
   }
   if (input.managesProject || input.membershipRoleNames.includes("manager")) {

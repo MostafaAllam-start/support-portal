@@ -30,7 +30,7 @@ async function main() {
   await seedReplies(prisma, sampleUsers);
   await seedReports(prisma, sampleUsers);
   await seedFeedback(prisma, sampleUsers, companies, projects);
-  await seedPartners(prisma, companies);
+  await seedPartners(prisma, scopes);
   await seedSiteRequests(prisma);
 }
 

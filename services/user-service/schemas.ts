@@ -37,6 +37,8 @@ export const updateUserSchema = z.object({
   // scopeIds replaces them all.
   companyId: z.number().int().positive().nullable().optional(),
   scopeIds: z.array(z.number().int().positive()).optional(),
+  // The partner of a partner account; null clears it.
+  partnerId: z.number().int().positive().nullable().optional(),
   // Whether the user is featured on their company's public landing-page team.
   isFeatured: z.boolean().optional(),
   // Whether the user has a public contact card at /contact-info/[id].

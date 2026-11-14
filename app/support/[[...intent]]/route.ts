@@ -1,4 +1,7 @@
 import type { NextRequest } from "next/server";
+import { isEcmScope, switchableScopes } from "@/lib/auth/guards";
+import { setSelectedScopeCookie } from "@/lib/scope-selection";
+import { scopeService, userService } from "@/services";
 
 // The branding site never hard-codes portal URLs: its support links point at
 // /support/<intent>?lang=ar|en, and this route sends them to the matching portal
@@ -19,6 +22,14 @@ export async function GET(
   const { intent = [] } = await params;
   const locale = request.nextUrl.searchParams.get("lang") === "ar" ? "ar" : "en";
   const route = ROUTES[intent.join("/")] ?? "";
+
+  // The branding site is ECM+: arriving from it, browse the portal as the ECM+ scope
+  // (overriding an earlier pick), unless this signed-in user may not switch to it.
+  const user = await userService.currentUser();
+  const ecm = (await scopeService.list()).find(isEcmScope);
+  if (ecm && switchableScopes(user, [ecm]).length > 0) {
+    await setSelectedScopeCookie(ecm.id);
+  }
 
   // 302 so browsers don't cache the hop; a relative Location keeps it on
   // whatever host the visitor used.

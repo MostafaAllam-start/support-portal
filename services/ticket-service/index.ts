@@ -8,6 +8,7 @@ import {
 import type {
   AssignTicketInput,
   CompanyTicketStats,
+  ScopeTicketStats,
   CreateReportInput,
   CreateTicketInput,
   ProjectTicketStats,
@@ -294,6 +295,55 @@ export class TicketService extends Service {
         return company;
       })
       .sort((a, b) => a.companyName.localeCompare(b.companyName));
+  }
+
+  // Ticket status counts grouped by scope and project within `scope`. A company is
+  // counted under the smallest scope holding it (the scope of just that company when
+  // there is one); a company without any scope keeps its own group.
+  async statsByScopeAndProject(scope: TicketScope): Promise<ScopeTicketStats[]> {
+    const [byCompany, scopes] = await Promise.all([
+      this.statsByCompanyAndProject(scope),
+      this.prisma.scope.findMany({
+        select: { id: true, name: true, companies: { select: { id: true } } },
+        orderBy: { id: "asc" },
+      }),
+    ]);
+
+    const scopeOfCompany = new Map<number, { id: number; name: string }>();
+    const bySize = [...scopes].sort((a, b) => a.companies.length - b.companies.length || a.id - b.id);
+    for (const s of bySize) {
+      for (const { id } of s.companies) {
+        if (!scopeOfCompany.has(id)) scopeOfCompany.set(id, { id: s.id, name: s.name });
+      }
+    }
+
+    const groups = new Map<string, ScopeTicketStats>();
+    for (const company of byCompany) {
+      const owner = company.companyId != null ? scopeOfCompany.get(company.companyId) : undefined;
+      const key = owner ? `scope:${owner.id}` : `company:${company.companyId ?? "none"}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = {
+          scopeId: owner?.id ?? null,
+          scopeName: owner?.name ?? company.companyName,
+          stats: this.emptyStats(),
+          projects: [],
+        };
+        groups.set(key, group);
+      }
+      for (const status of ["open", "in_progress", "closed"] as const) {
+        group.stats[status] += company.stats[status];
+      }
+      group.stats.total += company.stats.total;
+      group.projects.push(...company.projects);
+    }
+
+    return [...groups.values()]
+      .map((group) => ({
+        ...group,
+        projects: group.projects.sort((a, b) => a.projectName.localeCompare(b.projectName)),
+      }))
+      .sort((a, b) => a.scopeName.localeCompare(b.scopeName));
   }
 
   private emptyStats(): TicketStats {

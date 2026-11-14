@@ -62,7 +62,7 @@ In development, `COMPOSE_PROFILES=mailpit` in `.env` catches all mail in Mailpit
 
 ## Branding site and demo requests
 
-The ECM+ marketing site (the **Portico** template from [ecmplus-website-templates](https://github.com/MostafaAllam-start/ecmplus-website-templates)) is served by the portal itself:
+The ECM+ marketing site (the **Portico** site from [ecmplus-website-templates](https://github.com/MostafaAllam-start/ecmplus-website-templates)) is served by the portal itself:
 
 | Route | What it is |
 | ----- | ---------- |
@@ -72,11 +72,16 @@ The ECM+ marketing site (the **Portico** template from [ecmplus-website-template
 | `/contact` | Receives the site's **Request a demo** form and stores it as a request. |
 | `/en`, `/ar` | The portal, unchanged. |
 
-The site's pages are generated, not hand-edited. To pick up template changes, check out the templates repository next to this one and re-run the import, which rewrites the template's relative links for the portal and copies the pages and assets:
+The site's pages are generated, not hand-edited. The site is the Next.js project `portico-next` of the templates repository, built as a static export for this portal. To pick up changes, build it with the portal's settings and re-run the import, which copies the export into public/site:
 
 ```bash
-pnpm site:import ../ecmplus-website-templates
+cd ../ecmplus-website-templates/portico-next
+NEXT_PUBLIC_BASE_PATH=/site NEXT_PUBLIC_CONTACT_URL=/contact NEXT_PUBLIC_PARTNER_PORTAL_URL=/support/login npx next build
+cd -
+pnpm site:import ../ecmplus-website-templates/portico-next/out
 ```
+
+`NEXT_PUBLIC_BASE_PATH=/site` puts every link and asset under `/site`; `NEXT_PUBLIC_CONTACT_URL=/contact` sends the **Request a demo** form to this portal; `NEXT_PUBLIC_PARTNER_PORTAL_URL=/support/login` makes the header's **Partner Portal** item open the portal sign-in (**Customer Portal** already does).
 
 A **support** team member (the **Support** option on the user form) gets the **Requests** page in their dashboard: every demo request sent from the site and every message from the landing page's contact form, each with the scope the visitor was browsing as, which they can filter by status, open for details, mark as contacted, close or reopen. When a request comes from a new client who needs a support account, **Notify admin** sends every admin an in-app notification over Socket.IO and an email (even with `MAIL_NOTIFICATIONS=false`) asking them to create the account. New requests notify the support team members, or the admins if there are none. Admins and project managers see the Requests page too. The seed adds a sample support team member, `support1`, who has no project role and so lands on the Requests page.
 

@@ -29,6 +29,7 @@ import {
   updateScopeAction,
   type ScopeActionState,
 } from "../actions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type ScopeItem = {
   id: number;
@@ -127,12 +128,10 @@ function ScopeFormDialog({
                   key={company.id}
                   className="flex items-center gap-2 rounded-md border p-2.5 text-sm"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     name="companyIds"
-                    value={company.id}
+                    value={String(company.id)}
                     defaultChecked={scope.companyIds.includes(company.id)}
-                    className="size-4 rounded border-input"
                   />
                   {company.name}
                 </label>

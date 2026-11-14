@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn, keepInputOnError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ImageDropzone } from "@/components/ui/image-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,14 +30,15 @@ import {
   updatePartnerAction,
   type ActionState,
 } from "../actions";
+import { Checkbox } from "@/components/ui/checkbox";
 
-export type CompanyOption = { id: number; name: string };
+export type ScopeOption = { id: number; name: string };
 export type PartnerItem = {
   id: number;
   name: string;
   logo: string;
   details: string;
-  companyIds: number[];
+  scopeIds: number[];
 };
 
 const textareaClass =
@@ -47,16 +49,21 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive">{message}</p>;
 }
 
-function PartnerFormDialog({
+export function PartnerFormDialog({
   mode,
   partner,
-  companies,
+  scopes,
+  fixedScope,
+  onCreated,
   open,
   onOpenChange,
 }: {
   mode: "add" | "edit";
   partner?: PartnerItem;
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
+  // Adding from another form: the partner goes to this scope only (no scope picker).
+  fixedScope?: ScopeOption;
+  onCreated?: (partner: { id: number; name: string }) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -74,11 +81,13 @@ function PartnerFormDialog({
           ? t("partners.toast.created")
           : t("partners.toast.updated"),
       );
+      if (state.id != null && onCreated) onCreated({ id: state.id, name: state.name ?? "" });
       onOpenChange(false);
     } else if (state.error) {
       toast.error(state.error);
     }
-  }, [state, mode, t, onOpenChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,13 +119,17 @@ function PartnerFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="partner-logo">{t("partners.form.logo")}</Label>
-            <Input
+            <input type="hidden" name="currentLogo" value={partner?.logo ?? ""} />
+            <ImageDropzone
               id="partner-logo"
-              name="logo"
-              defaultValue={partner?.logo}
-              placeholder="https://…"
-              aria-invalid={Boolean(state.fieldErrors?.logo)}
-              required
+              name="logoFile"
+              defaultPreview={partner?.logo || undefined}
+              invalid={Boolean(state.fieldErrors?.logo)}
+              texts={{
+                hint: t("partners.form.logoHint"),
+                types: t("partners.form.logoTypes"),
+                remove: t("partners.form.logoRemove"),
+              }}
             />
             <FieldError message={state.fieldErrors?.logo} />
           </div>
@@ -135,29 +148,35 @@ function PartnerFormDialog({
             <FieldError message={state.fieldErrors?.details} />
           </div>
 
-          <div className="space-y-2">
-            <Label>{t("partners.form.companies")}</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {companies.map((company) => (
-                <label
-                  key={company.id}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    name="companyIds"
-                    value={company.id}
-                    defaultChecked={partner?.companyIds.includes(company.id)}
-                    className="size-4 rounded border-input"
-                  />
-                  {company.name}
-                </label>
-              ))}
+          {fixedScope ? (
+            <div className="space-y-2">
+              <Label>{t("partners.form.scopes")}</Label>
+              <input type="hidden" name="scopeIds" value={fixedScope.id} />
+              <p className="text-sm">{fixedScope.name}</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t("partners.form.companiesHint")}
-            </p>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>{t("partners.form.scopes")}</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {scopes.map((scope) => (
+                  <label
+                    key={scope.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Checkbox
+                      name="scopeIds"
+                      value={String(scope.id)}
+                      defaultChecked={partner?.scopeIds.includes(scope.id)}
+                    />
+                    {scope.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("partners.form.scopesHint")}
+              </p>
+            </div>
+          )}
 
           <DialogFooter>
             <DialogClose asChild>
@@ -231,9 +250,9 @@ function DeletePartnerDialog({
 }
 
 export function AddPartnerButton({
-  companies,
+  scopes,
 }: {
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
 }) {
   const t = useTranslations("Dashboard");
   const [open, setOpen] = useState(false);
@@ -246,7 +265,7 @@ export function AddPartnerButton({
       </Button>
       <PartnerFormDialog
         mode="add"
-        companies={companies}
+        scopes={scopes}
         open={open}
         onOpenChange={setOpen}
       />
@@ -256,10 +275,10 @@ export function AddPartnerButton({
 
 export function PartnerRowActions({
   partner,
-  companies,
+  scopes,
 }: {
   partner: PartnerItem;
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
 }) {
   const t = useTranslations("Dashboard");
   const [editOpen, setEditOpen] = useState(false);
@@ -289,7 +308,7 @@ export function PartnerRowActions({
       <PartnerFormDialog
         mode="edit"
         partner={partner}
-        companies={companies}
+        scopes={scopes}
         open={editOpen}
         onOpenChange={setEditOpen}
       />

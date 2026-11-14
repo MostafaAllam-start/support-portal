@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { companyService } from "@/services";
-import { brandCompanyId, brandScope, requireScopeSelection } from "@/lib/auth/guards";
+import { brandCompanyId, brandScope } from "@/lib/auth/guards";
 import { brandKeyForCompany } from "@/lib/companies";
 import { LoginScreen } from "../_components/login-screen";
 
@@ -17,7 +17,6 @@ export default async function LoginPage({
   const { locale } = await params;
   setRequestLocale(locale);
   // Scope selection comes first — even before the login page.
-  await requireScopeSelection();
   const [scope, companyId] = await Promise.all([brandScope(), brandCompanyId()]);
   const company = companyId ? await companyService.findById(companyId) : null;
   return (

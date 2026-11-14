@@ -15,13 +15,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { CompanyTicketStats } from "@/services";
+import type { ScopeTicketStats } from "@/services";
 
 export async function KpiProjectBreakdown({
   groups,
   isGlobal,
 }: {
-  groups: CompanyTicketStats[];
+  groups: ScopeTicketStats[];
   isGlobal: boolean;
 }) {
   const t = await getTranslations("Dashboard");
@@ -57,30 +57,30 @@ export async function KpiProjectBreakdown({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        {groups.map((company) => (
-          <div key={company.companyId ?? "unscoped"} className="space-y-3">
+        {groups.map((group) => (
+          <div key={group.scopeId ?? `company:${group.scopeName}`} className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{company.companyName}</h3>
-                <Badge variant="secondary">{company.stats.total}</Badge>
+                <h3 className="font-semibold">{group.scopeName}</h3>
+                <Badge variant="secondary">{group.stats.total}</Badge>
               </div>
               <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                 <span>
                   {t("status.open")}:{" "}
                   <span className="font-medium text-foreground tabular-nums">
-                    {company.stats.open}
+                    {group.stats.open}
                   </span>
                 </span>
                 <span>
                   {t("status.in_progress")}:{" "}
                   <span className="font-medium text-foreground tabular-nums">
-                    {company.stats.in_progress}
+                    {group.stats.in_progress}
                   </span>
                 </span>
                 <span>
                   {t("status.closed")}:{" "}
                   <span className="font-medium text-foreground tabular-nums">
-                    {company.stats.closed}
+                    {group.stats.closed}
                   </span>
                 </span>
               </div>
@@ -100,7 +100,7 @@ export async function KpiProjectBreakdown({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {company.projects.map((project) => (
+                  {group.projects.map((project) => (
                     <TableRow key={project.projectId ?? "unscoped"}>
                       <TableCell className="font-medium">
                         {project.projectId == null

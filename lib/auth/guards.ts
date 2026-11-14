@@ -4,6 +4,7 @@ import { scopeService, userService } from "@/services";
 import type { AuthUser, ScopeWithCompanies, TicketScope } from "@/services";
 import { ProjectRole, UserRole } from "@/lib/auth/roles";
 import { getSelectedScopeIdFromCookie } from "@/lib/scope-selection";
+import { ECM_COMPANY_NAME } from "@/lib/companies";
 
 // The seeded default admin (same env fallback the seeder uses). This account's
 // type is locked — it must always remain an admin so the system can't be left
@@ -23,7 +24,8 @@ const TICKET_STATUS_EDITORS = ["admin", "manager", "reviewer"] as const;
 
 // Whether a user may open the staff dashboard: every account type except client.
 export function hasDashboardAccess(user: { role: UserRole }): boolean {
-  return user.role !== UserRole.client;
+  // Clients and partner accounts (a client tied to a partner) have no dashboard.
+  return user.role !== UserRole.client && user.role !== UserRole.partner;
 }
 
 // The ids of the projects a manager manages: the projects they are set as
@@ -69,22 +71,29 @@ export function switchableScopes<T extends { id: number }>(
   return scopes.filter((scope) => user.scopeIds.includes(scope.id));
 }
 
+// Whether a scope holds the ECM+ company: the scope visitors browse as by default.
+export function isEcmScope(scope: ScopeWithCompanies): boolean {
+  return scope.companies.some((company) => company.name === ECM_COMPANY_NAME);
+}
+
 // The scope a visitor is browsing as: the one they picked (kept in a cookie), as
-// long as it is theirs to pick. Without that, a signed-in user gets the scope of
-// their company, and a client failing that their first scope. Null if there's none.
+// long as it is theirs to pick. Without that, an anonymous visitor browses as the ECM+
+// scope (there is no scope-picking step), a signed-in user gets the scope of their
+// company, and a client failing that the ECM+ scope if it is theirs, else their first
+// scope. Null if there's none.
 export async function brandScope(): Promise<ScopeWithCompanies | null> {
   const user = await userService.currentUser();
   const pickedId = await getSelectedScopeIdFromCookie();
   const picked = pickedId != null ? await scopeService.findById(pickedId) : null;
   if (picked && switchableScopes(user, [picked]).length > 0) return picked;
-  if (!user) return null;
+  if (!user) return (await scopeService.list()).find(isEcmScope) ?? null;
 
   const scopes = switchableScopes(user, await scopeService.list());
   const ofCompany = scopes.find((scope) =>
     scope.companies.some((company) => company.id === user.companyId),
   );
   if (ofCompany) return ofCompany;
-  return hasDashboardAccess(user) ? null : (scopes[0] ?? null);
+  return hasDashboardAccess(user) ? null : (scopes.find(isEcmScope) ?? scopes[0] ?? null);
 }
 
 export async function brandScopeId(): Promise<number | null> {
@@ -98,17 +107,6 @@ export async function brandCompanyId(): Promise<number | null> {
   const user = await userService.currentUser();
   if (user?.companyId) return user.companyId;
   return (await brandScope())?.companies[0]?.id ?? null;
-}
-
-// Entry gate for the public surfaces (landing + auth): an anonymous visitor must
-// pick a scope first. Signed-in users pass through (their scope is handled by
-// requireUser / login).
-export async function requireScopeSelection(): Promise<void> {
-  const user = await userService.currentUser();
-  if (user) return;
-  if ((await brandScope()) == null) {
-    redirect({ href: "/company-select", locale: await getLocale() });
-  }
 }
 
 // Whether a role may fully manage tickets (create/edit/delete/close). Used to
@@ -322,10 +320,15 @@ export async function requireUser(): Promise<AuthUser> {
     redirect({ href: "/dashboard", locale });
     throw new Error("unreachable");
   }
-  // A client must pick their company (ECM/CTC) before using the surface.
+  // A client without a company works under the scope they browse as (ECM+ by default).
   if (user.companyId == null) {
-    redirect({ href: "/company-select", locale });
-    throw new Error("unreachable");
+    const companyId = (await brandScope())?.companies[0]?.id ?? null;
+    if (companyId == null) {
+      redirect({ href: "/login", locale });
+      throw new Error("unreachable");
+    }
+    await userService.update(user.id, { companyId });
+    return { ...user, companyId };
   }
   return user;
 }

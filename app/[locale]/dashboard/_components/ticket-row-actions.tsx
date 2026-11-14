@@ -41,6 +41,7 @@ import {
   updateTicketStatusAction,
   type TicketActionState,
 } from "../ticket-actions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type AssigneeOption = {
   id: number;
@@ -108,12 +109,10 @@ function AssigneeCheckboxes({
             key={assignee.id}
             className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
           >
-            <input
-              type="checkbox"
+            <Checkbox
               name="assigneeIds"
-              value={assignee.id}
+              value={String(assignee.id)}
               defaultChecked={selected.includes(assignee.id)}
-              className="size-4 accent-primary"
             />
             <span className="font-medium">{assignee.name}</span>
             {roleLabel && (

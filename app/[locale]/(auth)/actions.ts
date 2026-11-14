@@ -59,8 +59,6 @@ export async function loginAction(
     const scope = await brandScope();
     if (scope) {
       await chooseScope(scope.id);
-    } else {
-      href = "/company-select";
     }
   }
   return redirect({ href, locale: await getLocale() });

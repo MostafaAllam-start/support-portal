@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   emailService,
+  partnerService,
   projectService,
   roleService,
   scopeService,
@@ -111,6 +112,8 @@ type Access = {
   companyId: number | null;
   // The scopes (CTC, ECM, …) a team member or client holds; none for admins.
   scopeIds: number[];
+  // A partner account only: the partner it belongs to (one of its scope's partners).
+  partnerId: number | null;
   memberships: ProjectMembershipInput[];
 };
 
@@ -146,7 +149,8 @@ async function readAccess(
   }
   const role = rawRole;
 
-  const scoped = role === UserRole.client || role === UserRole.team_member;
+  const scoped =
+    role === UserRole.client || role === UserRole.team_member || role === UserRole.partner;
   const isSupport =
     role === UserRole.team_member && formData.get("isSupport") === "true";
   let companyId = role === UserRole.admin ? null : readCompanyId(formData);
@@ -161,17 +165,34 @@ async function readAccess(
       fieldErrors.scopeIds = t("scopeRequired");
     } else {
       scopeIds = scopes.map((scope) => scope.id);
+      if (role === UserRole.partner && scopeIds.length !== 1) {
+        fieldErrors.scopeIds = t("partnerScopeSingle");
+      }
       scopeCompanyIds = [
         ...new Set(scopes.flatMap((scope) => scope.companies.map((c) => c.id))),
       ];
       const inScope = companyId != null && scopeCompanyIds.includes(companyId);
       // With one company in the scopes it is the company, and a client whose
       // company is outside them gets the first; a team member must pick one.
-      if (scopeCompanyIds.length === 1 || (role === UserRole.client && !inScope)) {
+      const customer = role === UserRole.client || role === UserRole.partner;
+      if (scopeCompanyIds.length === 1 || (customer && !inScope)) {
         companyId = scopeCompanyIds[0];
       } else if (!inScope) {
         fieldErrors.companyId = t("companyOutsideScope");
       }
+    }
+  }
+
+  // A partner account belongs to one partner of its (single) scope.
+  let partnerId: number | null = null;
+  if (role === UserRole.partner) {
+    const raw = Number(formData.get("partnerId"));
+    const scopePartners =
+      scopeIds.length === 1 ? await partnerService.forScope(scopeIds[0]) : [];
+    if (!Number.isInteger(raw) || !scopePartners.some((p) => p.id === raw)) {
+      if (!fieldErrors.scopeIds) fieldErrors.partnerId = t("partnerRequired");
+    } else {
+      partnerId = raw;
     }
   }
 
@@ -211,7 +232,7 @@ async function readAccess(
 
   return Object.keys(fieldErrors).length > 0
     ? { fieldErrors }
-    : { access: { role, isSupport, companyId, scopeIds, memberships }, fieldErrors };
+    : { access: { role, isSupport, companyId, scopeIds, partnerId, memberships }, fieldErrors };
 }
 
 export async function createUserAction(
@@ -389,6 +410,7 @@ export async function updateUserAction(
         jobTitle: readOptional(formData, "jobTitle") ?? null,
         companyId: access.companyId,
         scopeIds: access.scopeIds,
+        partnerId: access.partnerId,
         website: readOptional(formData, "website") ?? null,
         whatsapp: readOptional(formData, "whatsapp") ?? null,
         linkedin: readOptional(formData, "linkedin") ?? null,

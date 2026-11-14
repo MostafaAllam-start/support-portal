@@ -21,7 +21,7 @@ export default async function KpisPage({
   const [stats, trend, projectGroups] = await Promise.all([
     ticketService.stats(scope),
     ticketService.createdTrend(scope, 30),
-    ticketService.statsByCompanyAndProject(scope),
+    ticketService.statsByScopeAndProject(scope),
   ]);
 
   return (

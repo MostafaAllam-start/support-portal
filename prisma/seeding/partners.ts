@@ -1,68 +1,83 @@
-import type { Company, PrismaClient } from "../../app/generated/prisma/client";
+import type { PrismaClient, Scope } from "../../app/generated/prisma/client";
 
-// Demo partners shown on the landing "Partners" section. Logos point at a
-// placeholder image service — swap for real logo URLs/paths later. Each partner
-// is associated with one or both companies (many-to-many) so the landing page
-// can show the right partners per brand. Skips seeding if any partners exist.
+// The partners shown on the landing "Partners" section of the ECM+ scope. Logos are
+// served from public/partners. Each partner is linked to the ECM+ scope, and the
+// landing page reads a scope's partners from the scope itself. Seeded by
+// name, so re-running the seed neither duplicates them nor undoes an admin's edits to
+// a partner's logo or details.
 const PARTNERS = [
   {
-    name: "Northwind",
-    logo: "https://placehold.co/240x120?text=Northwind",
-    details: "Document management integrations for the enterprise.",
-    companyKeys: ["ecm+", "ctc"],
+    name: "CTC MENA",
+    logo: "/partners/ctc.png",
+    details: "Exclusive agent of ECM+ in the Middle East and North Africa, and responsible for its Arabic localization.",
   },
   {
-    name: "Acme Corp",
-    logo: "https://placehold.co/240x120?text=Acme+Corp",
-    details: "Workflow automation and approval pipelines.",
-    companyKeys: ["ctc"],
+    name: "SPI Digital UK",
+    logo: "/partners/spi-digital.png",
+    details: "Technology partner behind the ECM+ platform.",
   },
   {
-    name: "Globex",
-    logo: "https://placehold.co/240x120?text=Globex",
-    details: "Secure cloud storage and content delivery.",
-    companyKeys: ["ecm+"],
+    name: "CMZ (Content Management Zone)",
+    logo: "/partners/cmz.png",
+    details: "Content management partner.",
   },
   {
-    name: "Initech",
-    logo: "https://placehold.co/240x120?text=Initech",
-    details: "Reporting and analytics for support teams.",
-    companyKeys: ["ctc"],
+    name: "Electrical Transmission & Distribution Partnership",
+    logo: "/partners/etdp.png",
+    details: "Industry partner for the electrical transmission and distribution sector.",
   },
   {
-    name: "Umbrella",
-    logo: "https://placehold.co/240x120?text=Umbrella",
-    details: "Identity and single sign-on services.",
-    companyKeys: ["ecm+", "ctc"],
+    name: "SAP",
+    logo: "/partners/sap.svg",
+    details: "ERP partner: ECM+ exchanges data with SAP as workflows run.",
   },
   {
-    name: "Soylent",
-    logo: "https://placehold.co/240x120?text=Soylent",
-    details: "Full-text search and indexing infrastructure.",
-    companyKeys: ["ctc"],
+    name: "Odoo",
+    logo: "/partners/odoo.svg",
+    details: "ERP partner: ECM+ exchanges data with Odoo as workflows run.",
   },
-];
+] as const;
+
+// Demo partners from earlier versions of the seed (placeholder logos). They are
+// removed when they are still untouched, so the ECM+ scope shows only real partners.
+const DEMO_PARTNERS = ["Northwind", "Acme Corp", "Globex", "Initech", "Umbrella", "Soylent"];
 
 export async function seedPartners(
   prisma: PrismaClient,
-  companies: Record<string, Company>,
+  scopes: Record<string, Scope>,
 ): Promise<void> {
-  const existing = await prisma.partner.count();
-  if (existing > 0) {
-    console.log(`• Partners already present (${existing}); skipping partner seed.`);
+  const ecm = scopes["ecm+"];
+  if (!ecm) {
+    console.log("• ECM+ scope not found; skipping partner seed.");
     return;
   }
 
-  for (const { companyKeys, ...partner } of PARTNERS) {
-    const connect = companyKeys
-      .map((key) => companies[key])
-      .filter((company): company is Company => Boolean(company))
-      .map((company) => ({ id: company.id }));
+  const removed = await prisma.partner.deleteMany({
+    where: { name: { in: DEMO_PARTNERS }, logo: { startsWith: "https://placehold.co/" } },
+  });
 
-    await prisma.partner.create({
-      data: { ...partner, companies: { connect } },
+  let created = 0;
+  for (const partner of PARTNERS) {
+    const existing = await prisma.partner.findFirst({
+      where: { name: partner.name },
+      select: { id: true },
     });
+    if (existing) {
+      // Make sure it is shown on the ECM+ scope, without touching its other scopes.
+      await prisma.partner.update({
+        where: { id: existing.id },
+        data: { scopes: { connect: { id: ecm.id } } },
+      });
+      continue;
+    }
+    await prisma.partner.create({
+      data: { ...partner, scopes: { connect: { id: ecm.id } } },
+    });
+    created++;
   }
 
-  console.log(`✓ Seeded ${PARTNERS.length} partners.`);
+  console.log(
+    `✓ Partners: ${created} created for the ECM+ scope, ${PARTNERS.length - created} already present` +
+      (removed.count ? `, ${removed.count} demo partners removed.` : "."),
+  );
 }
