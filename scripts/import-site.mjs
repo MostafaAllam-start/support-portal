@@ -1,144 +1,60 @@
-// Imports the ECM+ "Portico" branding site from a checkout of
-// MostafaAllam-start/ecmplus-website-templates into public/, so the portal serves it:
+// Imports the ECM+ "Portico" branding site into public/site, so the portal serves it.
 //
-//   pnpm site:import ../ecmplus-website-templates
+// The site is the Next.js project `portico-next` of MostafaAllam-start/ecmplus-website-templates,
+// built as a static export for this portal:
 //
-// Pages land in public/site/<page>/index.html and are served at /site/<page> (see the
-// rewrites in next.config.ts); the shared brand assets and photos go to public/assets/.
-// Next.js drops trailing slashes, which would break the template's directory-relative
-// links ("about/", "../documents/"), so every relative link is resolved against the
-// file's place in the templates repo and rewritten to an absolute portal path. Root-
-// relative links (/support/…, /contact) are kept: the portal answers them itself.
-// Re-run after changing the templates; the output is committed.
-import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+//   cd ecmplus-website-templates/portico-next
+//   NEXT_PUBLIC_BASE_PATH=/site NEXT_PUBLIC_CONTACT_URL=/contact \
+//   NEXT_PUBLIC_PARTNER_PORTAL_URL=/support/login npx next build
+//
+//   pnpm site:import ../ecmplus-website-templates/portico-next/out
+//
+// With basePath=/site every link, script and image in the export already points at /site/…,
+// so the export is copied as it is (pages, _next assets, images). Pages are folders with an
+// index.html, served at /site/<page> by the rewrites in next.config.ts; real files
+// (/site/_next/…, /site/assets/…) are served before those rewrites apply.
+//   - The demo form posts to /contact, which stores the request and redirects back to the
+//     page with ?request=sent|invalid; the site shows that outcome as a toast itself.
+//   - Support links (/support/login, /support/tickets, …) are handled by app/support.
+// Re-run after changing the site; the output is committed.
+import { cp, mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = path.resolve(
-  process.argv[2] ?? path.join(ROOT, "..", "ecmplus-website-templates"),
+  process.argv[2] ?? path.join(ROOT, "..", "ecmplus-website-templates", "portico-next", "out"),
 );
-const TEMPLATE = path.join(SOURCE, "templates", "portico");
 const SITE_OUT = path.join(ROOT, "public", "site");
-const ASSETS_OUT = path.join(ROOT, "public", "assets");
 
-const SITE_PREFIX = "/site";
-const TEMPLATE_PREFIX = "/templates/portico/";
-// Shared asset folders the Portico pages reference. The photo docs (CREDITS.md,
-// PROMPTS.md) stay out of public/.
-const ASSET_DIRS = ["brand", "brands", "photos/portico"];
-
-// The template's favicon.svg is an approximation of the logo; the pages use the
-// official ECM+ logo instead, rendered square in public/assets/favicon (outside the
-// folders this script replaces, so a re-import keeps it).
-const TEMPLATE_FAVICON = /<link rel="icon" href="\/assets\/brand\/favicon\.svg"[^>]*>/;
-const FAVICON_LINKS = [
-  '<link rel="icon" href="/assets/favicon/ecmplus-32.png" type="image/png" sizes="32x32">',
-  '<link rel="icon" href="/assets/favicon/ecmplus-192.png" type="image/png" sizes="192x192">',
-  '<link rel="apple-touch-icon" href="/assets/favicon/ecmplus-192.png">',
-].join("\n  ");
-
-const URL_ATTRS = /\b(href|src|action|poster)="([^"]*)"/g;
-const SRCSET_ATTRS = /\b(srcset|imagesrcset)="([^"]*)"/g;
-const BASE = "http://templates.local";
-
-// Maps a link found in the template file at `filePath` (its URL path inside the
-// templates repo) to the path the portal serves it at.
-function rewriteUrl(value, filePath) {
-  // Anchors, root-relative and absolute URLs (https:, mailto:, data:) stay as-is.
-  if (!value || /^(#|\/|[a-z][a-z0-9+.-]*:)/i.test(value)) return value;
-
-  const url = new URL(value, BASE + filePath);
-  let pathname = url.pathname;
-  if (pathname.startsWith(TEMPLATE_PREFIX)) {
-    pathname = `${SITE_PREFIX}/${pathname.slice(TEMPLATE_PREFIX.length)}`;
-    if (pathname.endsWith("/")) pathname = pathname.slice(0, -1);
-  } else if (!pathname.startsWith("/assets/")) {
-    throw new Error(`Unexpected link "${value}" in ${filePath}`);
-  }
-  return pathname + url.search + url.hash;
-}
-
-function rewriteSrcset(value, filePath) {
-  return value
-    .split(",")
-    .map((candidate) => {
-      const [url, ...descriptors] = candidate.trim().split(/\s+/);
-      return [rewriteUrl(url, filePath), ...descriptors].join(" ");
-    })
-    .join(", ");
-}
-
-function transformHtml(html, filePath, lang) {
-  let out = html
-    .replace(URL_ATTRS, (_, attr, value) => `${attr}="${rewriteUrl(value, filePath)}"`)
-    .replace(SRCSET_ATTRS, (_, attr, value) => `${attr}="${rewriteSrcset(value, filePath)}"`)
-    .replace(TEMPLATE_FAVICON, FAVICON_LINKS)
-    // The portal's additions (frosted header, toasts) load after the template's CSS.
-    .replace(
-      "</head>",
-      `  <link rel="stylesheet" href="${SITE_PREFIX}/portal.css">\n</head>`,
-    );
-
-  if (out.includes('id="demo-form"')) {
-    // The demo form posts to the portal's /contact handler: tell it the page
-    // language (for the redirect back), unless the template's form already does.
-    if (!/<input type="hidden" name="lang"/.test(out)) {
-      out = out.replace(
-        /(<form\b[^>]*\bid="demo-form"[^>]*>)/,
-        `$1\n            <input type="hidden" name="lang" value="${lang}">`,
-      );
-    }
-  }
-  // Every page has support links, so every page loads the script that shows the
-  // loader on them (and the demo form's outcome, where there is one).
-  return out.replace(
-    "</body>",
-    `  <script src="${SITE_PREFIX}/portal.js" defer></script>\n</body>`,
-  );
-}
-
-async function* walk(dir) {
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) yield* walk(full);
-    else yield full;
+async function exists(p) {
+  try {
+    await stat(p);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-async function importPages() {
-  await rm(SITE_OUT, { recursive: true, force: true });
-  let pages = 0;
-  for await (const file of walk(TEMPLATE)) {
-    const rel = path.relative(TEMPLATE, file).split(path.sep).join("/");
-    const target = path.join(SITE_OUT, rel);
-    await mkdir(path.dirname(target), { recursive: true });
-    if (rel.endsWith(".html")) {
-      const lang = rel.startsWith("ar/") ? "ar" : "en";
-      const html = await readFile(file, "utf8");
-      await writeFile(target, transformHtml(html, TEMPLATE_PREFIX + rel, lang));
-      pages++;
-    } else {
-      await cp(file, target);
-    }
-  }
-  for (const file of ["portal.js", "portal.css"]) {
-    await cp(path.join(ROOT, "scripts", "site", file), path.join(SITE_OUT, file));
-  }
-  return pages;
+if (!(await exists(path.join(SOURCE, "index.html"))) || !(await exists(path.join(SOURCE, "_next")))) {
+  throw new Error(`"${SOURCE}" is not a static export of portico-next (no index.html or _next). Build it first, see the header of this script.`);
+}
+const home = await readFile(path.join(SOURCE, "index.html"), "utf8");
+if (!home.includes('/site/_next/')) {
+  throw new Error("The export was built without NEXT_PUBLIC_BASE_PATH=/site: its assets would not resolve under /site.");
 }
 
-async function importAssets() {
-  for (const dir of ASSET_DIRS) {
-    const target = path.join(ASSETS_OUT, dir);
-    await rm(target, { recursive: true, force: true });
-    await cp(path.join(SOURCE, "assets", dir), target, {
-      recursive: true,
-      filter: (src) => !src.endsWith(".md"),
-    });
-  }
-}
+await rm(SITE_OUT, { recursive: true, force: true });
+await mkdir(SITE_OUT, { recursive: true });
+await cp(SOURCE, SITE_OUT, { recursive: true });
 
-const pages = await importPages();
-await importAssets();
-console.log(`Imported ${pages} Portico pages into public/site and assets into public/assets.`);
+async function count(dir) {
+  let n = 0;
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) n += await count(full);
+    else if (e.name === "index.html") n++;
+  }
+  return n;
+}
+console.log(`Imported ${await count(SITE_OUT)} Portico pages into public/site.`);
