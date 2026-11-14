@@ -5,14 +5,14 @@ import type { BrandKey } from "@/lib/companies";
 
 export async function LandingPartners({
   brand,
-  companyId,
+  scopeId,
 }: {
   brand: BrandKey;
-  companyId: number | null;
+  scopeId: number | null;
 }) {
   const t = await getTranslations("Landing");
-  // Only the partners associated with the company being branded.
-  const partners = companyId ? await partnerService.forCompany(companyId) : [];
+  // The partners of the scope being browsed (those of its companies).
+  const partners = scopeId ? await partnerService.forScope(scopeId) : [];
 
   return (
     <section id="partners" className="scroll-mt-16 border-b py-20">

@@ -25,6 +25,14 @@ export class PartnerService extends Service {
     });
   }
 
+  // Partners featured on a scope: those of any company the scope holds.
+  forScope(scopeId: number): Promise<Partner[]> {
+    return this.prisma.partner.findMany({
+      where: { companies: { some: { scopes: { some: { id: scopeId } } } } },
+      orderBy: { id: "asc" },
+    });
+  }
+
   findById(id: number): Promise<Partner | null> {
     return this.prisma.partner.findUnique({ where: { id } });
   }

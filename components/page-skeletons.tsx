@@ -223,3 +223,63 @@ export function CustomerPageSkeleton({
     </div>
   );
 }
+
+// The public landing page: the header bar, a hero and a row of cards.
+export function LandingPageSkeleton() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Busy />
+      <div className="flex h-16 items-center gap-4 border-b px-4">
+        <Skeleton className="h-7 w-28" />
+        <div className="ms-6 hidden gap-6 md:flex">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-4 w-16" />
+          ))}
+        </div>
+        <Skeleton className="ms-auto h-9 w-24" />
+      </div>
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-12 px-4 py-16">
+        <div className="mx-auto max-w-2xl space-y-4 text-center">
+          <Skeleton className="mx-auto h-10 w-3/4" />
+          <Skeleton className="mx-auto h-4 w-full" />
+          <Skeleton className="mx-auto h-4 w-2/3" />
+          <Skeleton className="mx-auto h-10 w-36" />
+        </div>
+        <PartnersSkeleton />
+      </main>
+    </div>
+  );
+}
+
+// The sign-in card.
+export function AuthPageSkeleton() {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <Busy />
+      <div className="w-full max-w-sm space-y-4 rounded-lg border p-6">
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    </div>
+  );
+}
+
+// Cards standing in for the landing page's partners while they load.
+export function PartnersSkeleton() {
+  return (
+    <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i} className="flex items-start gap-4 rounded-xl border p-6">
+          <Skeleton className="h-12 w-12 shrink-0" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
