@@ -4,9 +4,12 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { partnerService } from "@/services";
 import { requireRole } from "@/lib/auth/guards";
+import { saveUserImage } from "@/lib/uploads";
 
 export type ActionState = {
   ok?: boolean;
+  id?: number; // the new partner's id and name, after a create
+  name?: string;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -26,6 +29,15 @@ function fieldErrorsFrom(error: z.ZodError): Record<string, string> {
     }
   }
   return out;
+}
+
+// A freshly dropped logo is saved to storage and wins; otherwise the current one
+// (carried in `currentLogo`) is kept. Throws a user-facing Error on a bad type or size.
+async function resolveLogo(formData: FormData): Promise<string> {
+  const file = formData.get("logoFile");
+  if (file instanceof File && file.size > 0) return saveUserImage(file);
+  const current = formData.get("currentLogo");
+  return typeof current === "string" ? current : "";
 }
 
 function readId(formData: FormData): number | null {
@@ -54,26 +66,34 @@ export async function createPartnerAction(
 ): Promise<ActionState> {
   await requireRole("admin");
 
+  let logo = "";
+  try {
+    logo = await resolveLogo(formData);
+  } catch (error) {
+    return { fieldErrors: { logo: error instanceof Error ? error.message : "Invalid image" } };
+  }
   const parsed = fieldsSchema.safeParse({
     name: formData.get("name"),
-    logo: formData.get("logo"),
+    logo,
     details: formData.get("details"),
   });
   if (!parsed.success) {
     return { fieldErrors: fieldErrorsFrom(parsed.error) };
   }
 
+  let createdId: number | undefined;
   try {
-    await partnerService.create({
+    const created = await partnerService.create({
       ...parsed.data,
       scopeIds: readScopeIds(formData),
     });
+    createdId = created.id;
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Failed to save" };
   }
 
   revalidate();
-  return { ok: true };
+  return { ok: true, id: createdId, name: parsed.data.name };
 }
 
 export async function updatePartnerAction(
@@ -85,9 +105,15 @@ export async function updatePartnerAction(
   const id = readId(formData);
   if (!id) return { error: "Invalid partner" };
 
+  let logo = "";
+  try {
+    logo = await resolveLogo(formData);
+  } catch (error) {
+    return { fieldErrors: { logo: error instanceof Error ? error.message : "Invalid image" } };
+  }
   const parsed = fieldsSchema.safeParse({
     name: formData.get("name"),
-    logo: formData.get("logo"),
+    logo,
     details: formData.get("details"),
   });
   if (!parsed.success) {

@@ -20,6 +20,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn, keepInputOnError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { PartnerFormDialog } from "../../partners/_components/partner-actions";
 import { Input } from "@/components/ui/input";
 import { ImageDropzone } from "@/components/ui/image-dropzone";
 import { Label } from "@/components/ui/label";
@@ -90,6 +91,8 @@ export type ProjectOption = {
 };
 export type RoleOption = { id: number; name: string };
 export type ScopeOption = { id: number; name: string; companies: CompanyOption[] };
+const ADD_PARTNER = "__add_partner__";
+
 export type PartnerOption = { id: number; name: string; scopeIds: number[] };
 
 // The options the form needs, loaded once by the Users page.
@@ -193,7 +196,10 @@ function UserFormDialog({
   );
   // A partner account has one scope and one of that scope's partners.
   const [partnerId, setPartnerId] = useState(user?.partnerId ? String(user.partnerId) : "");
-  const scopePartners = options.partners.filter((p) =>
+  // Partners added from this form, before the page data refreshes.
+  const [addedPartners, setAddedPartners] = useState<PartnerOption[]>([]);
+  const [addPartnerOpen, setAddPartnerOpen] = useState(false);
+  const scopePartners = [...options.partners, ...addedPartners].filter((p) =>
     scopeIds.length === 1 ? p.scopeIds.includes(Number(scopeIds[0])) : false,
   );
   function pickPartnerScope(id: string) {
@@ -276,7 +282,10 @@ function UserFormDialog({
     );
   }
 
+  const partnerScope = options.scopes.find((sc) => String(sc.id) === scopeIds[0]);
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Header and footer stay fixed; only the field area scrolls. The height
           is capped on tablet/desktop so the dialog never outgrows the viewport. */}
@@ -473,8 +482,11 @@ function UserFormDialog({
                           <input type="hidden" name="partnerId" value={partnerId} />
                           <Select
                             value={partnerId}
-                            onValueChange={setPartnerId}
-                            disabled={scopePartners.length === 0}
+                            onValueChange={(value) => {
+                              if (value === ADD_PARTNER) setAddPartnerOpen(true);
+                              else setPartnerId(value);
+                            }}
+                            disabled={scopeIds.length === 0}
                           >
                             <SelectTrigger
                               id="user-partner"
@@ -496,6 +508,10 @@ function UserFormDialog({
                                   {p.name}
                                 </SelectItem>
                               ))}
+                              <SelectItem value={ADD_PARTNER} className="font-medium text-primary">
+                                <Plus className="size-4" />
+                                {t("users.form.partnerAdd")}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FieldError message={state.fieldErrors?.partnerId} />
@@ -902,6 +918,20 @@ function UserFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+    {addPartnerOpen && partnerScope && (
+      <PartnerFormDialog
+        mode="add"
+        scopes={[]}
+        fixedScope={{ id: partnerScope.id, name: partnerScope.name }}
+        open={addPartnerOpen}
+        onOpenChange={setAddPartnerOpen}
+        onCreated={(p) => {
+          setAddedPartners((list) => [...list, { id: p.id, name: p.name, scopeIds: [partnerScope.id] }]);
+          setPartnerId(String(p.id));
+        }}
+      />
+    )}
+    </>
   );
 }
 

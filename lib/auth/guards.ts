@@ -72,7 +72,7 @@ export function switchableScopes<T extends { id: number }>(
 }
 
 // Whether a scope holds the ECM+ company: the scope visitors browse as by default.
-function isEcmScope(scope: ScopeWithCompanies): boolean {
+export function isEcmScope(scope: ScopeWithCompanies): boolean {
   return scope.companies.some((company) => company.name === ECM_COMPANY_NAME);
 }
 
