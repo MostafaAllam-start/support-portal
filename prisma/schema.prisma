@@ -50,6 +50,8 @@ enum UserRole {
   admin
   team_member
   client
+  // A client who belongs to one of the partners featured on a scope.
+  partner
 }
 
 // Which form a request came from: the branding site's "Request a demo", or the
@@ -117,6 +119,10 @@ model User {
   // belong to, and a live client must hold one (a database trigger checks it,
   // see prisma/seeding/scopes.ts). Admins have none.
   scopes Scope[]
+
+  // A partner account belongs to one partner (of its single scope); other types have none.
+  partnerId Int?     @map("partner_id")
+  partner   Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   // Tickets this user reported, and the assignment rows linking this user
   // (a software-engineer) to the tickets assigned to them.
@@ -367,9 +373,12 @@ model Partner {
   logo    String
   details String
 
-  // A partner can be shown on more than one company's landing page, and a company
-  // can have many partners — many-to-many (implicit join table).
-  companies Company[]
+  // A scope has one or more partners, shown on its landing page, and a partner can be
+  // featured on more than one scope — many-to-many (implicit join table).
+  scopes Scope[]
+
+  // The partner accounts of this partner.
+  users User[]
 
   @@map("partners")
 }
@@ -406,7 +415,6 @@ model Company {
   projects    Project[]
   users       User[]
   tickets     Ticket[]
-  partners    Partner[]
   suggestions Suggestion[]
   scopes      Scope[]
 
@@ -421,10 +429,11 @@ model Scope {
   // Shown wherever a visitor picks or browses under this scope.
   logo String @default("")
 
-  // The companies in this scope and the users holding it (both many-to-many,
-  // implicit join tables).
+  // The companies in this scope, the users holding it and the partners featured
+  // on its landing page (all many-to-many, implicit join tables).
   companies Company[]
   users     User[]
+  partners  Partner[]
 
   // Requests from visitors browsing under this scope.
   siteRequests SiteRequest[]

@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DEFAULT_ADMIN_USERNAME, requireRole } from "@/lib/auth/guards";
 import {
   companyService,
+  partnerService,
   projectService,
   roleService,
   scopeService,
@@ -22,6 +23,7 @@ import {
   UserRowActions,
 } from "./_components/user-actions";
 import { UserRow } from "./_components/user-row";
+import { UserFilters } from "./_components/user-filters";
 
 // Up to two uppercase initials from a display name, for the avatar fallback.
 function initials(name: string) {
@@ -36,21 +38,40 @@ function initials(name: string) {
 
 export default async function UsersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ q?: string; scope?: string; role?: string; status?: string }>;
 }) {
   const { locale } = await params;
+  const { q, scope: scopeParam, role: roleParam, status: statusParam } = await searchParams;
   setRequestLocale(locale);
   const admin = await requireRole("admin");
   const t = await getTranslations("Dashboard");
 
-  const [users, companies, projects, roles, scopes] = await Promise.all([
+  const [allUsers, companies, projects, roles, scopes, partners] = await Promise.all([
     userService.listDetailed(),
     companyService.list(),
     projectService.list(),
     roleService.list(),
     scopeService.list(),
+    partnerService.list(),
   ]);
+  // The filters from the address: search by name or email, scope, account type and status.
+  const needle = (q ?? "").trim().toLowerCase();
+  const scopeFilter = Number(scopeParam);
+  const users = allUsers.filter(
+    (user) =>
+      (!needle ||
+        user.name.toLowerCase().includes(needle) ||
+        user.email.toLowerCase().includes(needle)) &&
+      (!Number.isInteger(scopeFilter) ||
+        scopeFilter <= 0 ||
+        user.scopeIds.includes(scopeFilter)) &&
+      (!roleParam || user.role === roleParam) &&
+      (statusParam !== "active" || !user.isDisabled) &&
+      (statusParam !== "disabled" || user.isDisabled),
+  );
   // What the create/edit form offers: companies, and the projects and project
   // roles a team member can be given.
   const formOptions = {
@@ -63,6 +84,7 @@ export default async function UsersPage({
     })),
     roles: roles.map((r) => ({ id: r.id, name: r.name })),
     scopes: scopes.map((s) => ({ id: s.id, name: s.name, companies: s.companies })),
+    partners: partners.map((p) => ({ id: p.id, name: p.name, scopeIds: p.scopes.map((s) => s.id) })),
   };
   // A team member's project roles, as display names.
   const projectRoleLabel = (name: string) =>
@@ -81,6 +103,12 @@ export default async function UsersPage({
         <AddUserButton options={formOptions} />
       </div>
 
+      <UserFilters
+        scopes={scopes.map((s) => ({ id: s.id, name: s.name }))}
+        total={allUsers.length}
+        shown={users.length}
+      />
+
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -96,6 +124,13 @@ export default async function UsersPage({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  {t("users.filters.noResults")}
+                </TableCell>
+              </TableRow>
+            )}
             {users.map((user) => (
               <UserRow
                 key={user.id}
@@ -185,6 +220,7 @@ export default async function UsersPage({
                       role: user.role,
                       isSupport: user.isSupport,
                       scopeIds: user.scopeIds,
+                      partnerId: user.partnerId,
                       image: user.image,
                       isDisabled: user.isDisabled,
                       companyId: user.companyId,

@@ -27,7 +27,8 @@ for upgrade in \
   prisma/migrations/20261103010000_user_scopes/migration.sql \
   prisma/migrations/20261103020000_contact_requests/migration.sql \
   prisma/migrations/20261103030000_ecm_plus_name/migration.sql \
-  prisma/migrations/20261103040000_scope_logo/migration.sql; do
+  prisma/migrations/20261103040000_scope_logo/migration.sql \
+  prisma/migrations/20261104000000_partner_scopes/migration.sql; do
   until npx prisma db execute --file "$upgrade"; do
     echo "[dev] Database not ready yet, retrying in 3 seconds..."
     sleep 3

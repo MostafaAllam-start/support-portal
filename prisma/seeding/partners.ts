@@ -1,8 +1,8 @@
-import type { Company, PrismaClient } from "../../app/generated/prisma/client";
+import type { PrismaClient, Scope } from "../../app/generated/prisma/client";
 
 // The partners shown on the landing "Partners" section of the ECM+ scope. Logos are
-// served from public/partners. Each partner is linked to the ECM+ company, and the
-// landing page reads a scope's partners through that scope's companies. Seeded by
+// served from public/partners. Each partner is linked to the ECM+ scope, and the
+// landing page reads a scope's partners from the scope itself. Seeded by
 // name, so re-running the seed neither duplicates them nor undoes an admin's edits to
 // a partner's logo or details.
 const PARTNERS = [
@@ -44,11 +44,11 @@ const DEMO_PARTNERS = ["Northwind", "Acme Corp", "Globex", "Initech", "Umbrella"
 
 export async function seedPartners(
   prisma: PrismaClient,
-  companies: Record<string, Company>,
+  scopes: Record<string, Scope>,
 ): Promise<void> {
-  const ecm = companies["ecm+"];
+  const ecm = scopes["ecm+"];
   if (!ecm) {
-    console.log("• ECM+ company not found; skipping partner seed.");
+    console.log("• ECM+ scope not found; skipping partner seed.");
     return;
   }
 
@@ -63,15 +63,15 @@ export async function seedPartners(
       select: { id: true },
     });
     if (existing) {
-      // Make sure it is shown on the ECM+ scope, without touching its other companies.
+      // Make sure it is shown on the ECM+ scope, without touching its other scopes.
       await prisma.partner.update({
         where: { id: existing.id },
-        data: { companies: { connect: { id: ecm.id } } },
+        data: { scopes: { connect: { id: ecm.id } } },
       });
       continue;
     }
     await prisma.partner.create({
-      data: { ...partner, companies: { connect: { id: ecm.id } } },
+      data: { ...partner, scopes: { connect: { id: ecm.id } } },
     });
     created++;
   }

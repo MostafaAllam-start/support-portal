@@ -24,7 +24,8 @@ const TICKET_STATUS_EDITORS = ["admin", "manager", "reviewer"] as const;
 
 // Whether a user may open the staff dashboard: every account type except client.
 export function hasDashboardAccess(user: { role: UserRole }): boolean {
-  return user.role !== UserRole.client;
+  // Clients and partner accounts (a client tied to a partner) have no dashboard.
+  return user.role !== UserRole.client && user.role !== UserRole.partner;
 }
 
 // The ids of the projects a manager manages: the projects they are set as

@@ -164,7 +164,7 @@ export class EmailService extends Service {
           // Staff open the dashboard page; clients, such as a ticket's reporter,
           // open the customer one.
           const href =
-            user.role !== UserRole.client
+            user.role !== UserRole.client && user.role !== UserRole.partner
               ? notificationHref(notification.entityType, notification.entityId)
               : customerNotificationHref(notification.entityType, notification.entityId);
 

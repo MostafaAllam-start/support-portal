@@ -30,6 +30,14 @@ export type ProjectTicketStats = {
   stats: TicketStats;
 };
 
+// Ticket counts of one scope (its companies together) with the breakdown by project.
+export type ScopeTicketStats = {
+  scopeId: number | null;
+  scopeName: string;
+  stats: TicketStats;
+  projects: ProjectTicketStats[];
+};
+
 export type CompanyTicketStats = {
   companyId: number | null;
   companyName: string;

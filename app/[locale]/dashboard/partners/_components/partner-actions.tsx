@@ -29,14 +29,15 @@ import {
   updatePartnerAction,
   type ActionState,
 } from "../actions";
+import { Checkbox } from "@/components/ui/checkbox";
 
-export type CompanyOption = { id: number; name: string };
+export type ScopeOption = { id: number; name: string };
 export type PartnerItem = {
   id: number;
   name: string;
   logo: string;
   details: string;
-  companyIds: number[];
+  scopeIds: number[];
 };
 
 const textareaClass =
@@ -50,13 +51,13 @@ function FieldError({ message }: { message?: string }) {
 function PartnerFormDialog({
   mode,
   partner,
-  companies,
+  scopes,
   open,
   onOpenChange,
 }: {
   mode: "add" | "edit";
   partner?: PartnerItem;
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -136,26 +137,24 @@ function PartnerFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>{t("partners.form.companies")}</Label>
+            <Label>{t("partners.form.scopes")}</Label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {companies.map((company) => (
+              {scopes.map((scope) => (
                 <label
-                  key={company.id}
+                  key={scope.id}
                   className="flex items-center gap-2 text-sm"
                 >
-                  <input
-                    type="checkbox"
-                    name="companyIds"
-                    value={company.id}
-                    defaultChecked={partner?.companyIds.includes(company.id)}
-                    className="size-4 rounded border-input"
+                  <Checkbox
+                    name="scopeIds"
+                    value={String(scope.id)}
+                    defaultChecked={partner?.scopeIds.includes(scope.id)}
                   />
-                  {company.name}
+                  {scope.name}
                 </label>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              {t("partners.form.companiesHint")}
+              {t("partners.form.scopesHint")}
             </p>
           </div>
 
@@ -231,9 +230,9 @@ function DeletePartnerDialog({
 }
 
 export function AddPartnerButton({
-  companies,
+  scopes,
 }: {
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
 }) {
   const t = useTranslations("Dashboard");
   const [open, setOpen] = useState(false);
@@ -246,7 +245,7 @@ export function AddPartnerButton({
       </Button>
       <PartnerFormDialog
         mode="add"
-        companies={companies}
+        scopes={scopes}
         open={open}
         onOpenChange={setOpen}
       />
@@ -256,10 +255,10 @@ export function AddPartnerButton({
 
 export function PartnerRowActions({
   partner,
-  companies,
+  scopes,
 }: {
   partner: PartnerItem;
-  companies: CompanyOption[];
+  scopes: ScopeOption[];
 }) {
   const t = useTranslations("Dashboard");
   const [editOpen, setEditOpen] = useState(false);
@@ -289,7 +288,7 @@ export function PartnerRowActions({
       <PartnerFormDialog
         mode="edit"
         partner={partner}
-        companies={companies}
+        scopes={scopes}
         open={editOpen}
         onOpenChange={setEditOpen}
       />

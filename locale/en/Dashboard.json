@@ -30,9 +30,9 @@
     "trendTitle": "Tickets created",
     "trendDescriptionGlobal": "New tickets per day over the last 30 days across the system.",
     "trendDescriptionScoped": "New tickets per day over the last 30 days in your projects.",
-    "projectsTitle": "Tickets by company & project",
-    "projectsDescriptionGlobal": "Status counts for every company and project in the system.",
-    "projectsDescriptionScoped": "Status counts for the companies and projects you belong to.",
+    "projectsTitle": "Tickets by scope",
+    "projectsDescriptionGlobal": "Status counts for every scope and its projects in the system.",
+    "projectsDescriptionScoped": "Status counts for the scopes and projects you belong to.",
     "projectsEmpty": "No ticket data to show for your projects.",
     "project": "Project",
     "noProject": "No project"
@@ -104,6 +104,8 @@
         "typeInvalid": "Choose an account type",
         "membershipInvalid": "Choose a project and a role on every row",
         "membershipDuplicate": "Each project can be added once",
+        "partnerRequired": "Choose one of the scope's partners",
+        "partnerScopeSingle": "A partner account belongs to exactly one scope",
         "scopeRequired": "Choose at least one scope",
         "companyOutsideScope": "Choose a main company from the scopes' companies",
         "projectOutsideScope": "Each project must belong to a company in the scopes"
@@ -135,8 +137,14 @@
       "scope": "Scopes",
       "scopeHint": {
         "team_member": "Tick one or more: the companies they work with. Reviewers and SAP consultants see these companies' tickets; project roles come from these companies' projects.",
-        "client": "Tick one or more: the scopes this client belongs to. With more than one, they switch between them in the header."
+        "client": "Tick one or more: the scopes this client belongs to. With more than one, they switch between them in the header.",
+        "partner": "Choose the scope this partner account belongs to. It can be in one scope only."
       },
+      "partner": "Partner",
+      "partnerScopePlaceholder": "Select a scope",
+      "partnerChooseScope": "Choose a scope first",
+      "partnerNone": "This scope has no partners yet",
+      "partnerPlaceholder": "Select a partner",
       "mainCompany": "Main company",
       "mainCompanyHint": "The company they appear under, such as on the landing team.",
       "support": "Support",
@@ -161,6 +169,20 @@
       "enable": "Enable"
     },
     "projectRolesLabel": "Project roles",
+    "filters": {
+      "search": "Search by name or email",
+      "scope": "Filter by scope",
+      "allScopes": "All scopes",
+      "role": "Filter by account type",
+      "allRoles": "All account types",
+      "status": "Filter by status",
+      "allStatuses": "All statuses",
+      "active": "Active",
+      "disabled": "Disabled",
+      "clear": "Clear",
+      "count": "{shown} of {total} users",
+      "noResults": "No users match your search."
+    },
     "types": {
       "admin": {
         "label": "Administrator",
@@ -171,6 +193,11 @@
         "label": "Team member",
         "description": "Staff. What they see on the dashboard follows from their company and project roles.",
         "accessHint": "Managers see their projects' tickets, complaints, suggestions and requests; reviewers and SAP consultants their scopes' tickets; engineers the tickets assigned to them. Support adds the Requests page."
+      },
+      "partner": {
+        "label": "Partner",
+        "description": "Same access as a client, and belongs to one of a scope's partners.",
+        "accessHint": "A partner account reports tickets, complaints and suggestions like a client. It belongs to one scope and to one of that scope's partners."
       },
       "client": {
         "label": "Client",
@@ -233,8 +260,8 @@
     "logo": "Logo",
     "name": "Name",
     "details": "Details",
-    "companies": "Companies",
-    "noCompanies": "—",
+    "scopes": "Scopes",
+    "noScopes": "—",
     "add": "Add partner",
     "edit": "Edit",
     "delete": "Delete",
@@ -247,8 +274,8 @@
       "name": "Name",
       "logo": "Logo URL",
       "details": "Details",
-      "companies": "Companies",
-      "companiesHint": "The partner appears on the landing page of each selected company.",
+      "scopes": "Scopes",
+      "scopesHint": "The partner appears on the landing page of each selected scope.",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving…"

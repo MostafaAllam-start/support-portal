@@ -1,11 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { STORAGE_ROOT } from "@/lib/storage";
 
-// Uploaded user / team-member photos are written here and served from the public
-// URL prefix below (anything under /public is served at the site root).
-const UPLOAD_DIR = join(process.cwd(), "public", "users-images");
-const PUBLIC_PREFIX = "/users-images";
+// Uploaded user / team-member photos (and company and scope logos) are written to the
+// app-managed storage dir, which survives rebuilds as a volume, and served through the
+// /uploads/[...path] route. Not /public: Next does not serve files added there at runtime.
+const UPLOAD_DIR = join(STORAGE_ROOT, "users-images");
+const PUBLIC_PREFIX = "/uploads/users-images";
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -22,8 +24,8 @@ const MIME_EXT: Record<string, string> = {
 
 export const ACCEPTED_IMAGE_TYPES = Object.keys(MIME_EXT);
 
-// Persists an uploaded image to /public/users-images and returns its public path
-// (e.g. "/users-images/<uuid>.png"). Throws a user-facing Error when the file's
+// Persists an uploaded image to the storage dir and returns its public path
+// (e.g. "/uploads/users-images/<uuid>.png"). Throws a user-facing Error when the file's
 // type or size is not allowed.
 export async function saveUserImage(file: File): Promise<string> {
   const ext = MIME_EXT[file.type];

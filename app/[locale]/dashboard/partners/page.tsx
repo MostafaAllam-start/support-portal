@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireRole } from "@/lib/auth/guards";
-import { companyService, partnerService } from "@/services";
+import { partnerService, scopeService } from "@/services";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -25,11 +25,11 @@ export default async function PartnersPage({
   await requireRole("admin");
   const t = await getTranslations("Dashboard");
 
-  const [partners, companies] = await Promise.all([
+  const [partners, scopes] = await Promise.all([
     partnerService.list(),
-    companyService.list(),
+    scopeService.list(),
   ]);
-  const companyOptions = companies.map((c) => ({ id: c.id, name: c.name }));
+  const scopeOptions = scopes.map((c) => ({ id: c.id, name: c.name }));
 
   return (
     <div className="space-y-6">
@@ -42,7 +42,7 @@ export default async function PartnersPage({
             {t("partners.subtitle")}
           </p>
         </div>
-        <AddPartnerButton companies={companyOptions} />
+        <AddPartnerButton scopes={scopeOptions} />
       </div>
 
       {partners.length === 0 ? (
@@ -57,7 +57,7 @@ export default async function PartnersPage({
                 <TableHead className="w-16">{t("partners.logo")}</TableHead>
                 <TableHead>{t("partners.name")}</TableHead>
                 <TableHead>{t("partners.details")}</TableHead>
-                <TableHead>{t("partners.companies")}</TableHead>
+                <TableHead>{t("partners.scopes")}</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -78,17 +78,17 @@ export default async function PartnersPage({
                     {partner.details}
                   </TableCell>
                   <TableCell>
-                    {partner.companies.length > 0 ? (
+                    {partner.scopes.length > 0 ? (
                       <span className="flex flex-wrap gap-1">
-                        {partner.companies.map((company) => (
-                          <Badge key={company.id} variant="secondary">
-                            {company.name}
+                        {partner.scopes.map((scope) => (
+                          <Badge key={scope.id} variant="secondary">
+                            {scope.name}
                           </Badge>
                         ))}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">
-                        {t("partners.noCompanies")}
+                        {t("partners.noScopes")}
                       </span>
                     )}
                   </TableCell>
@@ -99,9 +99,9 @@ export default async function PartnersPage({
                         name: partner.name,
                         logo: partner.logo,
                         details: partner.details,
-                        companyIds: partner.companies.map((c) => c.id),
+                        scopeIds: partner.scopes.map((c) => c.id),
                       }}
-                      companies={companyOptions}
+                      scopes={scopeOptions}
                     />
                   </TableCell>
                 </TableRow>

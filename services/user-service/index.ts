@@ -492,6 +492,7 @@ export class UserService extends Service {
       isSupport?: boolean;
       companyId?: number | null;
       scopeIds?: number[];
+      partnerId?: number | null;
       website?: string | null;
       whatsapp?: string | null;
       linkedin?: string | null;
@@ -515,6 +516,7 @@ export class UserService extends Service {
         role,
         isSupport: role === UserRole.team_member && (opts.isSupport ?? false),
         companyId: opts.companyId ?? null,
+        partnerId: role === UserRole.partner ? (opts.partnerId ?? null) : null,
         ...(opts.scopeIds?.length
           ? { scopes: { connect: opts.scopeIds.map((id) => ({ id })) } }
           : {}),

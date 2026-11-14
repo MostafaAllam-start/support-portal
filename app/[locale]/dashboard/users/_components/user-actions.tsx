@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Trash2,
   UserRound,
+  Handshake,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -69,6 +70,8 @@ export type UserItem = {
   companyId: number | null;
   // The scopes (CTC, ECM, …) a team member or client holds.
   scopeIds: number[];
+  // The partner a partner account belongs to.
+  partnerId: number | null;
   website: string | null;
   whatsapp: string | null;
   linkedin: string | null;
@@ -87,6 +90,7 @@ export type ProjectOption = {
 };
 export type RoleOption = { id: number; name: string };
 export type ScopeOption = { id: number; name: string; companies: CompanyOption[] };
+export type PartnerOption = { id: number; name: string; scopeIds: number[] };
 
 // The options the form needs, loaded once by the Users page.
 export type UserFormOptions = {
@@ -94,11 +98,13 @@ export type UserFormOptions = {
   projects: ProjectOption[];
   roles: RoleOption[];
   scopes: ScopeOption[];
+  partners: PartnerOption[];
 };
 
 // The account types in the order the picker shows them, each with its icon.
 const TYPES: { value: UserRole; icon: LucideIcon }[] = [
   { value: UserRole.client, icon: UserRound },
+  { value: UserRole.partner, icon: Handshake },
   { value: UserRole.team_member, icon: UsersRound },
   { value: UserRole.admin, icon: ShieldCheck },
 ];
@@ -176,6 +182,7 @@ function UserFormDialog({
   );
   const isTeamMember = role === UserRole.team_member;
   const isClient = role === UserRole.client;
+  const isPartner = role === UserRole.partner;
   // Team members and clients get one or more scopes (CTC, ECM, …); admins have
   // none. A team member also picks a main company among the scopes' companies.
   // A client is defined by the scopes alone: their company is the one they're
@@ -184,6 +191,16 @@ function UserFormDialog({
   const [scopeIds, setScopeIds] = useState<string[]>(() =>
     (user?.scopeIds ?? []).map(String),
   );
+  // A partner account has one scope and one of that scope's partners.
+  const [partnerId, setPartnerId] = useState(user?.partnerId ? String(user.partnerId) : "");
+  const scopePartners = options.partners.filter((p) =>
+    scopeIds.length === 1 ? p.scopeIds.includes(Number(scopeIds[0])) : false,
+  );
+  function pickPartnerScope(id: string) {
+    setScopeIds([id]);
+    setPartnerId("");
+    setCompanyId("");
+  }
   const [companyId, setCompanyId] = useState(
     user?.companyId ? String(user.companyId) : "",
   );
@@ -290,7 +307,7 @@ function UserFormDialog({
                 role="radiogroup"
                 aria-label={t("users.form.sections.type")}
                 aria-invalid={Boolean(state.fieldErrors?.role)}
-                className="grid gap-2 sm:grid-cols-3"
+                className="grid gap-2 sm:grid-cols-2"
               >
                 {TYPES.map(({ value, icon: Icon }) => {
                   const checked = role === value;
@@ -309,7 +326,10 @@ function UserFormDialog({
                         value={value}
                         checked={checked}
                         disabled={typeLocked}
-                        onChange={() => setRole(value)}
+                        onChange={() => {
+                          setRole(value);
+                          if (value === UserRole.partner && scopeIds.length > 1) setScopeIds([]);
+                        }}
                         className="sr-only"
                       />
                       <span
@@ -425,40 +445,98 @@ function UserFormDialog({
                     (asksMainCompany || asksClientCompany) && "sm:grid-cols-2",
                   )}
                 >
-                    <fieldset className="space-y-2" aria-describedby="user-scope-hint">
-                      <legend className="text-sm font-medium">
-                        {t("users.form.scope")}
-                      </legend>
-                      <div className="flex flex-wrap gap-2">
-                        {options.scopes.map((s) => {
-                          const companyNames = s.companies.map((c) => c.name).join(", ");
-                          return (
-                            <label
-                              key={s.id}
-                              className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                    {isPartner ? (
+                      <div className="space-y-3 sm:col-span-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="user-partner-scope">{t("users.form.scope")}</Label>
+                          <input type="hidden" name="scopeIds" value={scopeIds[0] ?? ""} />
+                          <Select value={scopeIds[0] ?? ""} onValueChange={pickPartnerScope}>
+                            <SelectTrigger
+                              id="user-partner-scope"
+                              aria-invalid={Boolean(state.fieldErrors?.scopeIds)}
                             >
-                              <Checkbox
-                                name="scopeIds"
-                                value={String(s.id)}
-                                checked={scopeIds.includes(String(s.id))}
-                                onCheckedChange={() => toggleScope(String(s.id))}
-                                aria-invalid={Boolean(state.fieldErrors?.scopeIds)}
+                              <SelectValue placeholder={t("users.form.partnerScopePlaceholder")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.scopes.map((s) => (
+                                <SelectItem key={s.id} value={String(s.id)}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">{t("users.form.scopeHint.partner")}</p>
+                          <FieldError message={state.fieldErrors?.scopeIds} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="user-partner">{t("users.form.partner")}</Label>
+                          <input type="hidden" name="partnerId" value={partnerId} />
+                          <Select
+                            value={partnerId}
+                            onValueChange={setPartnerId}
+                            disabled={scopePartners.length === 0}
+                          >
+                            <SelectTrigger
+                              id="user-partner"
+                              aria-invalid={Boolean(state.fieldErrors?.partnerId)}
+                            >
+                              <SelectValue
+                                placeholder={
+                                  scopeIds.length === 0
+                                    ? t("users.form.partnerChooseScope")
+                                    : scopePartners.length === 0
+                                      ? t("users.form.partnerNone")
+                                      : t("users.form.partnerPlaceholder")
+                                }
                               />
-                              <span className="font-medium">{s.name}</span>
-                              {companyNames !== s.name && (
-                                <span className="text-xs text-muted-foreground">
-                                  ({companyNames})
-                                </span>
-                              )}
-                            </label>
-                          );
-                        })}
+                            </SelectTrigger>
+                            <SelectContent>
+                              {scopePartners.map((p) => (
+                                <SelectItem key={p.id} value={String(p.id)}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FieldError message={state.fieldErrors?.partnerId} />
+                        </div>
                       </div>
-                      <p id="user-scope-hint" className="text-xs text-muted-foreground">
-                        {t(`users.form.scopeHint.${role}`)}
-                      </p>
-                      <FieldError message={state.fieldErrors?.scopeIds} />
-                    </fieldset>
+                    ) : (
+                      <fieldset className="space-y-2" aria-describedby="user-scope-hint">
+                        <legend className="text-sm font-medium">
+                          {t("users.form.scope")}
+                        </legend>
+                        <div className="flex flex-wrap gap-2">
+                          {options.scopes.map((s) => {
+                            const companyNames = s.companies.map((c) => c.name).join(", ");
+                            return (
+                              <label
+                                key={s.id}
+                                className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                              >
+                                <Checkbox
+                                  name="scopeIds"
+                                  value={String(s.id)}
+                                  checked={scopeIds.includes(String(s.id))}
+                                  onCheckedChange={() => toggleScope(String(s.id))}
+                                  aria-invalid={Boolean(state.fieldErrors?.scopeIds)}
+                                />
+                                <span className="font-medium">{s.name}</span>
+                                {companyNames !== s.name && (
+                                  <span className="text-xs text-muted-foreground">
+                                    ({companyNames})
+                                  </span>
+                                )}
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <p id="user-scope-hint" className="text-xs text-muted-foreground">
+                          {t(`users.form.scopeHint.${role}`)}
+                        </p>
+                        <FieldError message={state.fieldErrors?.scopeIds} />
+                      </fieldset>
+                    )}
 
                     {asksMainCompany ? (
                       <div className="space-y-2">
